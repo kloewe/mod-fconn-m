@@ -6,44 +6,35 @@ function out = volClust(mask,vol,varargin)
 %   volume V. The results are returned in the structure C with the following
 %   fields and subfields:
 %
-%     Field            Content
-%     -----            -------
-%     clust            Found clusters.
+%     Field           Content
+%     -----           -------
+%     n               Number of found clusters.
 %
-%                      Subfield  Content
-%                      --------  -------
-%                      n         Number of found clusters.
-%                      volume    Label volume.
-%                                The value of each voxel is the number of
-%                                its containing cluster (values 1 - N,
-%                                where N is the number of clusters).
+%     label           Cluster labels.
+%          .volume    Label volume.
+%                     The value of each voxel is the number of its
+%                     containing cluster (values 1 - N, where N is the
+%                     number of clusters).
 %
-%     size             Property: cluster size.
+%     size            Property: cluster size.
+%         .values     Cluster size values.
+%                     Contains for each cluster the number of comprised
+%                     voxels. The i-th value corresponds to the i-th
+%                     cluster, where 1 <= i <= N.
+%         .volume     Cluster size volume.
+%                     The value of each voxel is the size of its containing
+%                     cluster or NaN if the voxel doesn't belong to any
+%                     cluster.
 %
-%                      Subfield  Content
-%                      --------  -------
-%                      values    Cluster size values.
-%                                Contains for each cluster the number of
-%                                comprised voxels. The i-th value corresponds
-%                                to the i-th cluster, where 1 <= i <= N.
-%                      volume    Cluster size volume.
-%                                The value of each voxel is the size of its
-%                                containing cluster or NaN if the voxel
-%                                doesn't belong to any cluster.
-%
-%     mass             Property: cluster mass.
-%
-%                      Subfield  Content
-%                      --------  -------
-%                      values    Cluster mass values.
-%                                Contains for each cluster the sum of all
-%                                values within that cluster. The i-th value
-%                                corresponds to the i-th cluster, where
-%                                1 <= i <= N.
-%                      volume    Cluster mass volume.
-%                                The value of each voxel is the mass of its
-%                                containing cluster or NaN if the voxel
-%                                doesn't belong to any cluster.
+%     mass            Property: cluster mass.
+%         .values     Cluster mass values.
+%                     Contains for each cluster the sum of all values within
+%                     that cluster. The i-th value corresponds to the i-th
+%                     cluster, where 1 <= i <= N.
+%         .volume     Cluster mass volume.
+%                     The value of each voxel is the mass of its containing
+%                     cluster or NaN if the voxel doesn't belong to any
+%                     cluster.
 %
 %   C = VOLCLUST(B,V,'PARAM1',VAL1,'PARAM2',VAL2,...) can be used to specify
 %   additional parameters and their values:
@@ -64,14 +55,17 @@ function out = volClust(mask,vol,varargin)
 %
 %   Author: Kristian Loewe
 
-assert(nargin >= 2 && nargin <= 6 && mod(nargin,2) == 0, ...
-  'Unexpected number of input arguments.');
+assert(nargin >= 2 && nargin <= 8 ...
+  && numel(varargin) >= 2 && numel(varargin) <= 6 ...
+  && mod(numel(varargin),2) == 0, 'Unexpected number of input arguments.');
 assert(isequal(size(mask), size(vol)));
 
+% defaults
 opts.Connectivity = 18;
 opts.Output = 'all';
 opts.Properties = {'size','mass'};
 
+% optional parameter-value pairs
 for i = 1:2:numel(varargin)
   pn = varargin{i};   % parameter name
   assert(ischar(pn), 'Parameter names must be of type char.');
@@ -97,40 +91,39 @@ end
 
 % find connected components in 3D
 if verLessThan('matlab', '7.8')                 % variant 1
-  [lbl, nC] = bwlabeln(mask, opts.Connectivity);
-  out.clust.n = nC;
-  out.clust.volume = lbl;
+  [lbl, out.n] = bwlabeln(mask, opts.Connectivity);
+  out.label.volume = lbl;
   clear lbl;
-  out.clust.volume = cast(out.clust.volume, class(vol));
+  out.label.volume = cast(out.label.volume, class(vol));
   
   if ismember('size', opts.Properties)
-    out.size.values = zeros(nC, 1, class(vol));
-    for iC = 1:nC
-      out.size.values(iC) = sum(out.clust.volume(:) == iC);
+    out.size.values = zeros(out.n, 1, class(vol));
+    for iC = 1:out.n
+      out.size.values(iC) = sum(out.label.volume(:) == iC);
     end
   end
   
   if ismember('mass', opts.Properties)
-    out.mass.values = zeros(nC, 1, class(vol));
-    for iC = 1:nC
-      out.mass.values(iC) = sum(vol(out.clust.volume(:) == iC));
+    out.mass.values = zeros(out.n, 1, class(vol));
+    for iC = 1:out.n
+      out.mass.values(iC) = sum(vol(out.label.volume(:) == iC));
     end
   end
   
   if ~strcmp(opts.Output, 'all')
     out.clust = rmfield(out.clust, 'volume');
   else
-    out.clust.volume(out.clust.volume == 0) = NaN;
+    out.label.volume(out.label.volume == 0) = NaN;
   end
   
 else                                            % variant 2 (faster)
   cc = bwconncomp(mask, opts.Connectivity);
-  out.clust.n = cc.NumObjects;
+  out.n = cc.NumObjects;
   
   if strcmp(opts.Output, 'all')
-    out.clust.volume = NaN(cc.ImageSize);
-    for iC = 1:cc.NumObjects
-      out.clust.volume(cc.PixelIdxList{iC}) = iC;
+    out.label.volume = NaN(cc.ImageSize);
+    for iC = 1:out.n
+      out.label.volume(cc.PixelIdxList{iC}) = iC;
     end
   end
   
@@ -140,7 +133,7 @@ else                                            % variant 2 (faster)
   
   if ismember('mass', opts.Properties)
     out.mass.values = zeros(cc.NumObjects, 1, class(vol));
-    for iC = 1:cc.NumObjects
+    for iC = 1:out.n
       out.mass.values(iC) = sum(vol(cc.PixelIdxList{iC}));
     end
   end
@@ -148,15 +141,15 @@ end
 
 if ismember('size', opts.Properties) && strcmpi(opts.Output, 'all')
   out.size.volume = NaN(size(mask), class(vol));
-  for iC = 1:numel(out.size.values)
-    out.size.volume(out.clust.volume == iC) = out.size.values(iC);
+  for iC = 1:out.n
+    out.size.volume(out.label.volume == iC) = out.size.values(iC);
   end
 end
 
-if ismember('mass',  opts.Properties) && strcmpi(opts.Output, 'all')
+if ismember('mass', opts.Properties) && strcmpi(opts.Output, 'all')
   out.mass.volume = NaN(size(mask), class(vol));
-  for iC = 1:numel(out.size.values)
-    out.mass.volume(out.clust.volume == iC) = out.mass.values(iC);
+  for iC = 1:out.n
+    out.mass.volume(out.label.volume == iC) = out.mass.values(iC);
   end
 end
 
