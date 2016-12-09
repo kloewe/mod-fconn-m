@@ -14,49 +14,51 @@ function c = volClustPermTest(vol,volperm,thr,cstat,alpha,varargin)
 %   the permutation distribution of the maximal statistic. The results are
 %   returned in the structure C with the following fields and subfields:
 %
-%     Field               Content
-%     -----               -------
-%     clust               Found clusters.
-%          .n             Number of found clusters.
-%          .volume        Label volume.
-%                         The value of each voxel is the number of its
-%                         containing cluster (values 1 - N, where N is the
-%                         number of clusters).
+%     Field           Content
+%     -----           -------
+%     n               Number of found clusters.
 %
-%     CSTAT               Cluster statistic.
-%         .values         Array of statistic values.
-%                         Contains the specified property for each of the
-%                         found clusters. The i-th value corresponds to the
-%                         i-th cluster, where 1 <= i <= N.
-%         .volume         Volume of statistics.
-%                         The value of each voxel is the statistic value of
-%                         its containing cluster or NaN if the voxel doesn't
-%                         belong to any cluster.
-%         .maxstats       Maximal statistics.
-%                         Statistic value from the maximal clusters in V
-%                         and in each of the volumes in VP. The first value
-%                         corresponds to the maximal cluster in V, and the
-%                         (i+1)-th value corresponds to maximal cluster in
-%                         the i-th permutation-derived volume VP(:,:,:,i).
-%         .pvalues        Array of p values.
-%                         Contains for each of the found clusters the
-%                         FWE-corrected p value (corrected based on the
-%                         permutation distribution of the maximal statistic).
-%         .pvolume        Volume of p values.
-%                         The value of each voxel is the p value of its
-%                         containing cluster or NaN if the voxel doesn't
-%                         belong to any cluster.
-%         .hvalues        Array of test results.
-%                         Contains for each of the found clusters the test
-%                         result. (CSTAT).hvalues(i) = 1 indicates a
-%                         rejection of the null hypothesis at the specified
-%                         significance level ALPHA for the i-th cluster,
-%                         and (CSTAT).hvalues(i) = 0 indicates a failure to
-%                         reject the null hypothesis for the i-th cluster.
-%         .hvolume        Volume of test results.
-%                         The value of each voxel is the test result of its
-%                         containing cluster or NaN if the voxel doesn't
-%                         belong to any cluster.
+%     label           Cluster labels.
+%          .volume    Label volume.
+%                     The value of each voxel is the number of its
+%                     containing cluster (values 1 - N, where N is the
+%                     number of clusters) or NaN if the voxel doesn't
+%                     belong to any cluster.
+%
+%     CSTAT           Cluster statistic.
+%         .values     Array of statistic values.
+%                     Contains the specified property for each of the found
+%                     clusters. The i-th value corresponds to the i-th
+%                     cluster, where 1 <= i <= N.
+%         .volume     Volume of statistics.
+%                     The value of each voxel is the statistic value of its
+%                     containing cluster or NaN if the voxel doesn't belong
+%                     to any cluster.
+%         .maxstats   Maximal statistics.
+%                     Statistic value from the maximal clusters in V and in
+%                     each of the volumes in VP. The first value
+%                     corresponds to the maximal cluster in V, and the
+%                     (i+1)-th value corresponds to maximal cluster in the
+%                     i-th permutation-derived volume VP(:,:,:,i).
+%         .pvalues    Array of p values.
+%                     Contains for each of the found clusters the
+%                     FWE-corrected p value (corrected based on the
+%                     permutation distribution of the maximal statistic).
+%         .pvolume    Volume of p values.
+%                     The value of each voxel is the p value of its
+%                     containing cluster or NaN if the voxel doesn't belong
+%                     to any cluster.
+%         .hvalues    Array of test results.
+%                     Contains for each of the found clusters the test
+%                     result. (CSTAT).hvalues(i) = 1 indicates a
+%                     rejection of the null hypothesis at the specified
+%                     significance level ALPHA for the i-th cluster,
+%                     and (CSTAT).hvalues(i) = 0 indicates a failure to
+%                     reject the null hypothesis for the i-th cluster.
+%         .hvolume    Volume of test results.
+%                     The value of each voxel is the test result of its
+%                     containing cluster or NaN if the voxel doesn't belong
+%                     to any cluster.
 %
 %   C = VOLCLUSTPERMTEST(V,VP,THR,CSTAT,ALPHA,'PARAM1',VAL1,'PARAM2',VAL2,...)
 %   can be used to specify additional parameters and their values:
@@ -68,13 +70,14 @@ function c = volClustPermTest(vol,volperm,thr,cstat,alpha,varargin)
 %                     18 -> 18-connected neighborhood  (default)
 %                     26 -> 26-connected neighborhood
 %
-%   Author  : Kristian Loewe
+%   Author: Kristian Loewe
 
 assert(nargin >= 5 && mod(numel(varargin),2) == 0, ...
   'Unexpected number of input arguments.');
 assert(ndims(vol) == 3);
 assert(ndims(volperm) == 4);
 assert(isequal(size(vol), size(volperm(:,:,:,1))));
+assert(ismember(class(vol), {'single', 'double'}));
 
 nP = size(volperm, 4);                  % number of permutations
 
@@ -112,7 +115,11 @@ maskperm = volperm >= thr;
 c = volClust(mask, vol, ...
   'Connectivity', opts.Connectivity, 'Properties', {cstat});
 c.(cstat).maxstats = zeros(nP+1, 1);
-c.(cstat).maxstats(1) = max(c.(cstat).values);
+if c.n == 0
+  c.(cstat).maxstats(1) = 0;
+else
+  c.(cstat).maxstats(1) = max(c.(cstat).values);
+end
 for i = 1:nP
   if any(flat(maskperm(:,:,:,i)))
     cperm = volClust(maskperm(:,:,:,i), volperm(:,:,:,i), ...
@@ -134,8 +141,9 @@ else
 end
 
 % h values
-c.(cstat).hvalues = c.(cstat).pvalues < alpha;
-c.(cstat).hvolume = c.(cstat).pvolume < alpha;
+c.(cstat).hvalues = cast(c.(cstat).pvalues < alpha, class(vol));
+c.(cstat).hvolume = cast(c.(cstat).pvolume < alpha, class(vol));
+c.(cstat).hvolume(isnan(c.label.volume)) = NaN;
 
 % some additional assertions for debugging
 if debug
