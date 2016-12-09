@@ -14,7 +14,8 @@ function out = volClust(mask,vol,varargin)
 %          .volume    Label volume.
 %                     The value of each voxel is the number of its
 %                     containing cluster (values 1 - N, where N is the
-%                     number of clusters).
+%                     number of clusters) or NaN if the voxel doesn't
+%                     belong to any cluster.
 %
 %     size            Property: cluster size.
 %         .values     Cluster size values.
@@ -55,10 +56,11 @@ function out = volClust(mask,vol,varargin)
 %
 %   Author: Kristian Loewe
 
-assert(nargin >= 2 && nargin <= 8 ...
-  && numel(varargin) >= 2 && numel(varargin) <= 6 ...
+assert(nargin >= 2 && nargin <= 8 && numel(varargin) <= 6 ...
   && mod(numel(varargin),2) == 0, 'Unexpected number of input arguments.');
+assert(ndims(vol) == 3);
 assert(isequal(size(mask), size(vol)));
+assert(ismember(class(vol), {'single', 'double'}));
 
 % defaults
 opts.Connectivity = 18;
