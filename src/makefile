@@ -3,6 +3,11 @@
 # Contents: build MEX-files
 #           NB: tested with Matlab R2011b
 #
+#           make DEBUG=1
+#           make nodedeg
+#           make nodedeg_flt
+#           make nodedeg_dbl
+#
 # Author  : Kristian Loewe
 #-----------------------------------------------------------------------------
 .SUFFIXES:                                   # remove built-in rules
@@ -28,7 +33,7 @@ DEBUG       ?= 0
 ifeq ($(DEBUG), 1)
   MEXCC       += -v
   CFLAGS      += -g
-  COPTIMFLAGS =  -O3
+  COPTIMFLAGS =  -O2
 else
   MEXCC       += -O
   COPTIMFLAGS =  -O3 -funroll-loops
@@ -46,7 +51,7 @@ OUTDIR      = ../private
 
 LIBS        = -lm -lpthread
 
-PRGS        = nodedeg
+PRGS        = nodedeg edgestats
 
 #-----------------------------------------------------------------------------
 # Build Programs
@@ -63,6 +68,7 @@ nodedeg_flt = $(OUTDIR)/mxNodeDegFlt.$(SUF)
 nodedeg_dbl = $(OUTDIR)/mxNodeDegDbl.$(SUF)
 nodedeg: $(nodedeg_flt) $(nodedeg_dbl)
 	
+
 $(nodedeg_flt): DREAL = -DREAL=float
 $(nodedeg_dbl): DREAL = -DREAL=double
 
@@ -74,4 +80,25 @@ $(nodedeg_flt) $(nodedeg_dbl): \
 
 $(nodedeg_flt) $(nodedeg_dbl): $(PREREQ)
 $(nodedeg_flt) $(nodedeg_dbl): mxNodeDeg.c makefile
+	$(MEXCC) $(DREAL) $(INCS) $(LIBS) $< $(CFILES) -outdir $(OUTDIR) -output $@
+
+# mean, std, var, cmp, corr
+edgestats_flt = $(OUTDIR)/mxFcmFlt.$(SUF)
+edgestats_dbl = $(OUTDIR)/mxFcmDbl.$(SUF)
+edgestats: $(edgestats_flt) $(edgestats_dbl)
+	
+
+$(edgestats_flt): DREAL = -DREAL=float
+$(edgestats_dbl): DREAL = -DREAL=double
+
+$(edgestats_flt) $(edgestats_dbl): \
+  CFILES = $(FCONNDIR)/edgestats.c $(FCONNDIR)/fcmat.c $(FCONNDIR)/matrix.c \
+    $(CORRDIR)/pcc.c $(CORRDIR)/tetracc.c $(CORRDIR)/binarize.c \
+    $(CPUINFODIR)/cpuinfo.c $(STATSDIR)/stats.c
+  PREREQ = $(FCONNDIR)/edgestats.* $(FCONNDIR)/fcmat.*  $(FCONNDIR)/matrix.* \
+    $(CORRDIR)/pcc.* $(CORRDIR)/tetracc.* $(CORRDIR)/binarize.* \
+    $(CPUINFODIR)/cpuinfo.* $(STATSDIR)/stats.*
+
+$(edgestats_flt) $(edgestats_dbl): $(PREREQ)
+$(edgestats_flt) $(edgestats_dbl): mxFcm.c makefile
 	$(MEXCC) $(DREAL) $(INCS) $(LIBS) $< $(CFILES) -outdir $(OUTDIR) -output $@
