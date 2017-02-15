@@ -82,10 +82,30 @@ else
   mxFcm = @mxFcmDbl;
 end
 
+% optional parameter-value pairs
+opts = checkCommonParams(size(data,2), varargin{:});
+
 % function/statistic
+fno = [];
 switch fun
   case 'mean'
-    fno = 1;
+    if 1
+      fno = 1;
+    else
+      if opts.ConMeasure == 1
+        fpCorr = @pcc;     % fpCorr = @(d) pcc(d,'avx',1,48);
+      elseif opts.ConMeasure == 2
+        fpCorr = @tetracc; % fpCorr = @(d) tetracc(d,'m128i',0,48);
+      end
+      n = size(data, 2);
+      s = size(data, 3);
+      a = zeros(n*(n-1)/2, 1, dtype);
+      for i = 1:s
+        fcmi = atanh(fpCorr(data(:,:,i)));
+        a = a + fcmi;
+      end
+      a = a./s;
+    end
   case 'std'
     fno = 2;
   case 'var'
@@ -94,14 +114,13 @@ switch fun
     error('Unexpected function name.');
 end
 
-% optional parameter-value pairs
-opts = checkCommonParams(size(data,2), varargin{:});
+if ~isempty(fno)
+  args = {data, ...
+    opts.MaxThreads, opts.CacheParam, opts.MaxMemory, opts.ConMeasure, ...
+    int32(fno)};
 
-args = {data, ...
-  opts.MaxThreads, opts.CacheParam, opts.MaxMemory, opts.ConMeasure, ...
-  int32(fno)};
-
-% call mex function
-a = mxFcm(args{:});
+  % call mex function
+  a = mxFcm(args{:});
+end
 
 end
