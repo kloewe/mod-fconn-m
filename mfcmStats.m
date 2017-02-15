@@ -1,7 +1,7 @@
 function a = mfcmStats(fun,data,varargin)
-%MFCMEDGESTATS Element-wise statistics across multiple functional connectomes
+%MFCMSTATS Element-wise statistics across multiple functional connectomes
 %
-%   A = MFCMEDGESTATS(FUN,F,...) computes a N-by-N matrix of connection-level
+%   A = MFCMSTATS(FUN,F,...) computes a N-by-N matrix of connection-level
 %   statistics across multiple functional connectomes and returns its upper
 %   triangular elements in A, where A is a vector of length N*(N-1)/2 and F
 %   is a T-by-N-by-S array containing S functional data sets (for example,
@@ -16,22 +16,44 @@ function a = mfcmStats(fun,data,varargin)
 %     Function  Description
 %     --------  -----------
 %     'mean'    Sample means.
-%               A = MFCMEDGESTATS('mean',F) computes the matrix of sample
+%               A = MFCMSTATS('mean',F) computes the matrix of sample
 %               means across multiple functional connectivity matrices
 %               derived from the input functional data sets in F.
 %
 %     'std'     Sample standard deviations.
-%               A = MFCMEDGESTATS('std',F) computes the matrix of sample
+%               A = MFCMSTATS('std',F) computes the matrix of sample
 %               standard deviations computed across multiple functional
 %               connectivity matrices derived from the input functional
 %               data sets in F.
 %
 %     'var'     Sample variances.
-%               A = MFCMEDGESTATS('var',F) computes the matrix of sample
+%               A = MFCMSTATS('var',F) computes the matrix of sample
 %               variances computed across multiple functional connectivity
 %               matrices derived from the input functional data sets in F.
 %
-%   A = MFCMEDGESTATS(...,'PARAM1',VAL1,'PARAM2',VAL2,...) can be used to
+%     'tstat2'  T statistics (for independent two-sample t-tests).
+%               A = MFCMSTATS('tstat2',F,G) computes the matrix of
+%               t statistics based on the functional connectivity matrices
+%               derived from the input functional data sets in F and the
+%               membership vector G. F is an T-by-N-by-S array containing S
+%               functional data sets, where S = S1 + S2, and G is a vector
+%               of length S indicating sample membership for the data sets
+%               in F.
+%               Using A = MFCMSTATS('tstat2',F1,F2), the data sets can
+%               be passed separately. In this case, F1 (F2) is a T-by-N-by-S1
+%               (T-by-N-by-S2)) array containing S1 (S2) functional data
+%               sets.
+%
+%     'corr'    Linear correlation between FC and an additional variable.
+%               A = MFCMEDGESTATS('corr',F,V) returns the upper triangular
+%               elements of the matrix of correlations between the FC
+%               values and the variable V. For each element, the functional
+%               connectivity values that are correlated with V come from
+%               the corresponding elements of the S functional connectivity
+%               matrices derived from the S input functional data sets in F,
+%               where F is an T-by-N-by-S array and V is a vector of length S.
+%
+%   A = MFCMSTATS(...,'PARAM1',VAL1,'PARAM2',VAL2,...) can be used to
 %   specify the following additional parameters and their values:
 %
 %     Parameter     Value
@@ -82,21 +104,43 @@ else
   mxFcm = @mxFcmDbl;
 end
 
-% optional parameter-value pairs
-opts = checkCommonParams(size(data,2), varargin{:});
+% get function/statistic and optional parameter-value pairs
+[tf,fno] = ismember(fun, {'mean','std','var','tstat2','corr'});
+assert(tf && fno > 0, 'Unexpected function name.');
+fno = int32(fno);
 
-% function/statistic
-fno = [];
-switch fun
-  case 'mean'
-    if 1
-      fno = 1;
-    else
-      if opts.ConMeasure == 1
-        fpCorr = @pcc;     % fpCorr = @(d) pcc(d,'avx',1,48);
-      elseif opts.ConMeasure == 2
-        fpCorr = @tetracc; % fpCorr = @(d) tetracc(d,'m128i',0,48);
-      end
+if fno <= 3  % mean, std, var
+  opts = checkCommonParams(size(data,2), varargin{:});
+else         % tstat2, corr
+  opts = checkCommonParams(size(data,2), varargin{2:end});
+end
+
+% collect args
+args = {data, ...
+  opts.MaxThreads, opts.CacheParam, opts.MaxMemory, opts.ConMeasure, fno};
+
+if fno == 4 ...              % tstat2: mfcmStats('tstat2',F1,F2)
+    && size(data,1) == size(varargin{1},1) ...
+    && size(data,2) == size(varargin{1},2)
+  v = int32([zeros(size(data,3),1); ones(size(varargin{1},3),1)]);
+  args{1} = cat(3,data,varargin{1});
+  args{end+1} = v;
+elseif fno == 4 || fno == 5  % tstat2: mfcmStats('tstat2',F1,F2) or corr
+  v = varargin{1};
+  assert(isvector(v) && size(data,3) == numel(v));
+  args{end+1} = v;
+end
+
+% compute statistics (call mxFcm or use an alternative variant)
+if 0  % alternative variants
+  if opts.ConMeasure == 1
+    fpCorr = @pcc;     % fpCorr = @(d) pcc(d,'avx',1,48);
+  elseif opts.ConMeasure == 2
+    fpCorr = @tetracc; % fpCorr = @(d) tetracc(d,'m128i',0,48);
+  end
+  switch fun
+    case 'mean'
+      fno = [];
       n = size(data, 2);
       s = size(data, 3);
       a = zeros(n*(n-1)/2, 1, dtype);
@@ -105,21 +149,13 @@ switch fun
         a = a + fcmi;
       end
       a = a./s;
-    end
-  case 'std'
-    fno = 2;
-  case 'var'
-    fno = 3;
-  otherwise
-    error('Unexpected function name.');
+    case 'std'
+    case 'var'
+    case 'tstat2'
+    case 'corr'
+  end
 end
-
-if ~isempty(fno)
-  args = {data, ...
-    opts.MaxThreads, opts.CacheParam, opts.MaxMemory, opts.ConMeasure, ...
-    int32(fno)};
-
-  % call mex function
+if ~isempty(fno) % call mxFcm
   a = mxFcm(args{:});
 end
 
