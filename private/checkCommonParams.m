@@ -43,13 +43,30 @@ for i = 1:2:numel(varargin)
         otherwise
           error('Unknown functional connectivity measure specified.');
       end
-    case 'Paired'
-      assert(isscalar(pv) && ~issparse(pv) ...
-        && (islogical(v) || v == 0 || v == 1));
+%     case 'Paired'
+%       assert(isscalar(pv) && ~issparse(pv) ...
+%         && (islogical(v) || v == 0 || v == 1));
     otherwise
       error('Unexpected parameter name %s.',pn);
   end
   opts.(pn) = pv;
+end
+
+if opts.MaxMemory < 0  % if auto
+  if isunix
+    [rc,colnames] = system('free -g | grep available');
+    if ~rc
+      colnames = regexp(colnames, '[a-z]*', 'match');
+      idx = ismember('available', colnames);
+      if idx > 0
+        [rc,vals] = system('free -g | grep Mem');
+        vals = str2double(regexp(vals, '[0-9]*', 'match'));
+        if ~rc
+          opts.MaxMemory = vals(idx);
+        end
+      end
+    end
+  end
 end
 
 end
