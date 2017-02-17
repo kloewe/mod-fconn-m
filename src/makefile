@@ -14,6 +14,7 @@
 MAKEFLAGS    += -r
 
 SHELL       = /bin/bash
+DOTDIR      = ../../dot/src
 CORRDIR     = ../../corr/src
 CPUINFODIR  = ../../cpuinfo/src
 FCONNDIR    = ../../fconn/src
@@ -23,7 +24,7 @@ CC          = gcc
 CFLAGS      = -std=c99 -march=native \
               -Wall -Wextra -Wno-unused-parameter -Wconversion -Wshadow \
               -pedantic -fPIC
-DEFS        = -DPAIRSPLIT -DRECTGRID -DSAFETHREAD
+DEFS        = -DPAIRSPLIT -DRECTGRID -DSAFETHREAD -DDOT_NOFMA
 
 MATLABROOT  = $(dir $(realpath $(shell which matlab)))
 MEXCC       = $(realpath $(MATLABROOT))/mex -largeArrayDims
@@ -45,7 +46,8 @@ MEXOPTSCC   := CFLAGS='$(CFLAGS)' COPTIMFLAGS='$(COPTIMFLAGS)' $(DEFS)
 MEXOPTSLD   = LDOPTIMFLAGS='$(COPTIMFLAGS)'
 CFLAGS      += $(COPTIMFLAGS) $(DEFS)
 
-INCS        = -I$(CORRDIR) -I$(CPUINFODIR) -I$(FCONNDIR) -I$(STATSDIR)
+INCS        = -I$(DOTDIR) -I$(CORRDIR) -I$(CPUINFODIR) -I$(FCONNDIR) \
+              -I$(STATSDIR)
 SUF         = mexa64
 OUTDIR      = ../private
 
@@ -94,10 +96,12 @@ $(edgestats_dbl): DREAL = -DREAL=double
 $(edgestats_flt) $(edgestats_dbl): \
   CFILES = $(FCONNDIR)/edgestats.c $(FCONNDIR)/fcmat.c $(FCONNDIR)/matrix.c \
     $(CORRDIR)/pcc.c $(CORRDIR)/tetracc.c $(CORRDIR)/binarize.c \
-    $(CPUINFODIR)/cpuinfo.c $(STATSDIR)/stats.c
+    $(CPUINFODIR)/cpuinfo.c $(STATSDIR)/stats.c $(DOTDIR)/dot.c \
+    $(DOTDIR)/dot_avx.c $(DOTDIR)/dot_sse2.c $(DOTDIR)/dot_naive.c
   PREREQ = $(FCONNDIR)/edgestats.* $(FCONNDIR)/fcmat.*  $(FCONNDIR)/matrix.* \
     $(CORRDIR)/pcc.* $(CORRDIR)/tetracc.* $(CORRDIR)/binarize.* \
-    $(CPUINFODIR)/cpuinfo.* $(STATSDIR)/stats.*
+    $(CPUINFODIR)/cpuinfo.* $(STATSDIR)/stats.* $(DOTDIR)/dot.* \
+    $(DOTDIR)/dot_avx.* $(DOTDIR)/dot_sse2.*  $(DOTDIR)/dot_naive.*
 
 $(edgestats_flt) $(edgestats_dbl): $(PREREQ)
 $(edgestats_flt) $(edgestats_dbl): mxFcm.c makefile
