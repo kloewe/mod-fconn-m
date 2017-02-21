@@ -1,108 +1,255 @@
 #-----------------------------------------------------------------------------
 # File    : makefile
 # Contents: build MEX-files
-#           NB: tested with Matlab R2011b
-#
-#           make DEBUG=1
-#           make nodedeg
-#           make nodedeg_flt
-#           make nodedeg_dbl
-#
 # Author  : Kristian Loewe
 #-----------------------------------------------------------------------------
 .SUFFIXES:                                   # remove built-in rules
-MAKEFLAGS    += -r
+MAKEFLAGS   += -r
 
 SHELL       = /bin/bash
-DOTDIR      = ../../dot/src
-CORRDIR     = ../../corr/src
-CPUINFODIR  = ../../cpuinfo/src
-FCONNDIR    = ../../fconn/src
-STATSDIR    = ../../stats/src
+DOTDIR      = ../../dot
+CORRDIR     = ../../corr
+CPUINFODIR  = ../../cpuinfo
+FCONNDIR    = ../../fconn
+STATSDIR    = ../../stats
 
 CC          = gcc
-CFLAGS      = -std=c99 -march=native \
+CFLAGS      = -std=c99 \
               -Wall -Wextra -Wno-unused-parameter -Wconversion -Wshadow \
               -pedantic -fPIC
-DEFS        = -DPAIRSPLIT -DRECTGRID -DSAFETHREAD -DDOT_NOFMA
+COPTIMFLAGS = -O2
 
 MATLABROOT  = $(dir $(realpath $(shell which matlab)))
 MEXCC       = $(realpath $(MATLABROOT))/mex -largeArrayDims
 MEXLD       = $(realpath $(MATLABROOT))/mex -largeArrayDims $(MEXOPTSLD)
 
-DEBUG       ?= 0
-ifeq ($(DEBUG), 1)
-  MEXCC       += -v
-  CFLAGS      += -g
-  COPTIMFLAGS =  -O2
-else
-  MEXCC       += -O
-  COPTIMFLAGS =  -O3 -funroll-loops
-  DEFS        += -DNDEBUG
-endif
-
-MEXCC       += $(MEXOPTSCC)
-MEXOPTSCC   := CFLAGS='$(CFLAGS)' COPTIMFLAGS='$(COPTIMFLAGS)' $(DEFS)
-MEXOPTSLD   = LDOPTIMFLAGS='$(COPTIMFLAGS)'
-CFLAGS      += $(COPTIMFLAGS) $(DEFS)
-
-INCS        = -I$(DOTDIR) -I$(CORRDIR) -I$(CPUINFODIR) -I$(FCONNDIR) \
-              -I$(STATSDIR)
 SUF         = mexa64
+_OBJDIR     = obj/$(shell uname -m)/matlab
+OBJDIR      = ../$(_OBJDIR)
+_DUMMY      := $(shell mkdir -p $(OBJDIR); mkdir -p $(OBJDIR))
 OUTDIR      = ../private
-
-LIBS        = -lm -lpthread
-
-PRGS        = nodedeg edgestats
+_DUMMY      := $(shell mkdir -p $(OUTDIR); mkdir -p $(OUTDIR))
 
 #-----------------------------------------------------------------------------
-# Build Programs
+# Link MEX-files
 #-----------------------------------------------------------------------------
-all: $(PRGS)
+all: nodedeg_flt nodedeg_dbl edgestats_flt edgestats_dbl
 
-$(PRGS): | $(OUTDIR)
+nodedeg_flt:                   $(OUTDIR)/mxNodeDegFlt.$(SUF)
+$(OUTDIR)/mxNodeDegFlt.$(SUF): $(FCONNDIR)/$(_OBJDIR)/nodedeg_flt.o \
+                               $(FCONNDIR)/$(_OBJDIR)/fcmat_flt.o \
+                               $(CORRDIR)/$(_OBJDIR)/pcc_flt.o \
+                               $(CORRDIR)/$(_OBJDIR)/tetracc_flt.o \
+                               $(CORRDIR)/$(_OBJDIR)/binarize_flt.o \
+                               $(CPUINFODIR)/$(_OBJDIR)/cpuinfo.o \
+                               $(OBJDIR)/mxNodeDegFlt.o makefile
+	$(MEXLD)                     $(FCONNDIR)/$(_OBJDIR)/nodedeg_flt.o \
+                               $(FCONNDIR)/$(_OBJDIR)/fcmat_flt.o \
+                               $(CORRDIR)/$(_OBJDIR)/pcc_flt.o \
+                               $(CORRDIR)/$(_OBJDIR)/tetracc_flt.o \
+                               $(CORRDIR)/$(_OBJDIR)/binarize_flt.o \
+                               $(CPUINFODIR)/$(_OBJDIR)/cpuinfo.o \
+                               $(OBJDIR)/mxNodeDegFlt.o -output $@
 
-$(OUTDIR):
-	mkdir -p $(OUTDIR)
+edgestats_flt:                 $(OUTDIR)/mxFcmFlt.$(SUF)
+$(OUTDIR)/mxFcmFlt.$(SUF):     $(FCONNDIR)/$(_OBJDIR)/edgestats_flt.o \
+                               $(FCONNDIR)/$(_OBJDIR)/fcmat_flt.o \
+                               $(FCONNDIR)/$(_OBJDIR)/matrix_flt.o \
+                               $(CORRDIR)/$(_OBJDIR)/pcc_flt.o \
+                               $(CORRDIR)/$(_OBJDIR)/tetracc_flt.o \
+                               $(CORRDIR)/$(_OBJDIR)/binarize_flt.o \
+                               $(STATSDIR)/$(_OBJDIR)/stats_flt.o \
+                               $(DOTDIR)/$(_OBJDIR)/dot.o \
+                               $(DOTDIR)/$(_OBJDIR)/dot_naive.o \
+                               $(DOTDIR)/$(_OBJDIR)/dot_sse2.o \
+                               $(DOTDIR)/$(_OBJDIR)/dot_avx.o \
+                               $(DOTDIR)/$(_OBJDIR)/dot_avxfma.o \
+                               $(CPUINFODIR)/$(_OBJDIR)/cpuinfo.o \
+                               $(OBJDIR)/mxFcmFlt.o makefile
+	$(MEXLD)                     $(FCONNDIR)/$(_OBJDIR)/edgestats_flt.o \
+                               $(FCONNDIR)/$(_OBJDIR)/fcmat_flt.o \
+                               $(FCONNDIR)/$(_OBJDIR)/matrix_flt.o \
+                               $(CORRDIR)/$(_OBJDIR)/pcc_flt.o \
+                               $(CORRDIR)/$(_OBJDIR)/tetracc_flt.o \
+                               $(CORRDIR)/$(_OBJDIR)/binarize_flt.o \
+                               $(STATSDIR)/$(_OBJDIR)/stats_flt.o \
+                               $(DOTDIR)/$(_OBJDIR)/dot.o \
+                               $(DOTDIR)/$(_OBJDIR)/dot_naive.o \
+                               $(DOTDIR)/$(_OBJDIR)/dot_sse2.o \
+                               $(DOTDIR)/$(_OBJDIR)/dot_avx.o \
+                               $(DOTDIR)/$(_OBJDIR)/dot_avxfma.o \
+                               $(CPUINFODIR)/$(_OBJDIR)/cpuinfo.o \
+                               $(OBJDIR)/mxFcmFlt.o -output $@
 
-# nodedeg
-nodedeg_flt = $(OUTDIR)/mxNodeDegFlt.$(SUF)
-nodedeg_dbl = $(OUTDIR)/mxNodeDegDbl.$(SUF)
-nodedeg: $(nodedeg_flt) $(nodedeg_dbl)
-	
+nodedeg_dbl:                   $(OUTDIR)/mxNodeDegDbl.$(SUF)
+$(OUTDIR)/mxNodeDegDbl.$(SUF): $(FCONNDIR)/$(_OBJDIR)/nodedeg_dbl.o \
+                               $(FCONNDIR)/$(_OBJDIR)/fcmat_dbl.o \
+                               $(CORRDIR)/$(_OBJDIR)/pcc_dbl.o \
+                               $(CORRDIR)/$(_OBJDIR)/tetracc_dbl.o \
+                               $(CORRDIR)/$(_OBJDIR)/binarize_dbl.o \
+                               $(CPUINFODIR)/$(_OBJDIR)/cpuinfo.o \
+                               $(OBJDIR)/mxNodeDegDbl.o makefile
+	$(MEXLD)                     $(FCONNDIR)/$(_OBJDIR)/nodedeg_dbl.o \
+                               $(FCONNDIR)/$(_OBJDIR)/fcmat_dbl.o \
+                               $(CORRDIR)/$(_OBJDIR)/pcc_dbl.o \
+                               $(CORRDIR)/$(_OBJDIR)/tetracc_dbl.o \
+                               $(CORRDIR)/$(_OBJDIR)/binarize_dbl.o \
+                               $(CPUINFODIR)/$(_OBJDIR)/cpuinfo.o \
+                               $(OBJDIR)/mxNodeDegDbl.o -output $@
 
-$(nodedeg_flt): DREAL = -DREAL=float
-$(nodedeg_dbl): DREAL = -DREAL=double
+edgestats_dbl:                 $(OUTDIR)/mxFcmDbl.$(SUF)
+$(OUTDIR)/mxFcmDbl.$(SUF):     $(FCONNDIR)/$(_OBJDIR)/edgestats_dbl.o \
+                               $(FCONNDIR)/$(_OBJDIR)/fcmat_dbl.o \
+                               $(FCONNDIR)/$(_OBJDIR)/matrix_dbl.o \
+                               $(CORRDIR)/$(_OBJDIR)/pcc_dbl.o \
+                               $(CORRDIR)/$(_OBJDIR)/tetracc_dbl.o \
+                               $(CORRDIR)/$(_OBJDIR)/binarize_dbl.o \
+                               $(STATSDIR)/$(_OBJDIR)/stats_dbl.o \
+                               $(DOTDIR)/$(_OBJDIR)/dot.o \
+                               $(DOTDIR)/$(_OBJDIR)/dot_naive.o \
+                               $(DOTDIR)/$(_OBJDIR)/dot_sse2.o \
+                               $(DOTDIR)/$(_OBJDIR)/dot_avx.o \
+                               $(DOTDIR)/$(_OBJDIR)/dot_avxfma.o \
+                               $(CPUINFODIR)/$(_OBJDIR)/cpuinfo.o \
+                               $(OBJDIR)/mxFcmDbl.o makefile
+	$(MEXLD)                     $(FCONNDIR)/$(_OBJDIR)/edgestats_dbl.o \
+                               $(FCONNDIR)/$(_OBJDIR)/fcmat_dbl.o \
+                               $(FCONNDIR)/$(_OBJDIR)/matrix_dbl.o \
+                               $(CORRDIR)/$(_OBJDIR)/pcc_dbl.o \
+                               $(CORRDIR)/$(_OBJDIR)/tetracc_dbl.o \
+                               $(CORRDIR)/$(_OBJDIR)/binarize_dbl.o \
+                               $(STATSDIR)/$(_OBJDIR)/stats_dbl.o \
+                               $(DOTDIR)/$(_OBJDIR)/dot.o \
+                               $(DOTDIR)/$(_OBJDIR)/dot_naive.o \
+                               $(DOTDIR)/$(_OBJDIR)/dot_sse2.o \
+                               $(DOTDIR)/$(_OBJDIR)/dot_avx.o \
+                               $(DOTDIR)/$(_OBJDIR)/dot_avxfma.o \
+                               $(CPUINFODIR)/$(_OBJDIR)/cpuinfo.o \
+                               $(OBJDIR)/mxFcmDbl.o -output $@
 
-$(nodedeg_flt) $(nodedeg_dbl): \
-  CFILES = $(FCONNDIR)/nodedeg.c $(FCONNDIR)/fcmat.c $(CORRDIR)/pcc.c \
-    $(CORRDIR)/tetracc.c $(CORRDIR)/binarize.c $(CPUINFODIR)/cpuinfo.c
-  PREREQ = $(FCONNDIR)/nodedeg.* $(FCONNDIR)/fcmat.* $(CORRDIR)/pcc.* \
-    $(CORRDIR)/tetracc.* $(CORRDIR)/binarize.* $(CPUINFODIR)/cpuinfo.*
+#-----------------------------------------------------------------------------
+# fconn-m objects
+#-----------------------------------------------------------------------------
+mxFcmFlt.o:                $(OBJDIR)/mxFcmFlt.o
+$(OBJDIR)/mxFcmFlt.o:      $(FCONNDIR)/src/edgestats.h \
+                           $(FCONNDIR)/src/fcmat.h $(FCONNDIR)/src/matrix.h \
+                           $(STATSDIR)/src/stats.h
+$(OBJDIR)/mxFcmFlt.o:      mxFcm.c makefile
+	$(realpath $(MATLABROOT))/mex -largeArrayDims \
+    CFLAGS='$(CFLAGS)' COPTIMFLAGS='$(COPTIMFLAGS)' \
+    -DNDEBUG -DREAL=float \
+    -I$(FCONNDIR)/src -I$(STATSDIR)/src \
+    -c mxFcm.c -outdir $(OBJDIR); \
+  mv $(OBJDIR)/mxFcm.o $(OBJDIR)/mxFcmFlt.o
 
-$(nodedeg_flt) $(nodedeg_dbl): $(PREREQ)
-$(nodedeg_flt) $(nodedeg_dbl): mxNodeDeg.c makefile
-	$(MEXCC) $(DREAL) $(INCS) $(LIBS) $< $(CFILES) -outdir $(OUTDIR) -output $@
+mxNodeDegFlt.o:            $(OBJDIR)/mxNodeDegFlt.o
+$(OBJDIR)/mxNodeDegFlt.o:  $(FCONNDIR)/src/nodedeg.h $(FCONNDIR)/src/fcmat.h
+$(OBJDIR)/mxNodeDegFlt.o:  mxNodeDeg.c makefile
+	$(realpath $(MATLABROOT))/mex -largeArrayDims \
+    CFLAGS='$(CFLAGS)' COPTIMFLAGS='$(COPTIMFLAGS)' \
+    -DNDEBUG -DREAL=float \
+    -I$(FCONNDIR)/src -I$(STATSDIR)/src \
+    -c mxNodeDeg.c -outdir $(OBJDIR); \
+  mv $(OBJDIR)/mxNodeDeg.o $(OBJDIR)/mxNodeDegFlt.o
 
-# mean, std, var, cmp, corr
-edgestats_flt = $(OUTDIR)/mxFcmFlt.$(SUF)
-edgestats_dbl = $(OUTDIR)/mxFcmDbl.$(SUF)
-edgestats: $(edgestats_flt) $(edgestats_dbl)
-	
+mxFcmDbl.o:                $(OBJDIR)/mxFcmDbl.o
+$(OBJDIR)/mxFcmDbl.o:      $(FCONNDIR)/src/fcmat.h $(FCONNDIR)/src/matrix.h \
+                           $(FCONNDIR)/src/edgestats.h $(STATSDIR)/src/stats.h
+$(OBJDIR)/mxFcmDbl.o:      mxFcm.c makefile
+	$(realpath $(MATLABROOT))/mex -largeArrayDims \
+    CFLAGS='$(CFLAGS)' COPTIMFLAGS='$(COPTIMFLAGS)' \
+    -DNDEBUG -DREAL=double \
+    -I$(FCONNDIR)/src -I$(STATSDIR)/src \
+    -c mxFcm.c -outdir $(OBJDIR); \
+  mv $(OBJDIR)/mxFcm.o $(OBJDIR)/mxFcmDbl.o
 
-$(edgestats_flt): DREAL = -DREAL=float
-$(edgestats_dbl): DREAL = -DREAL=double
+mxNodeDegDbl.o:            $(OBJDIR)/mxNodeDegDbl.o
+$(OBJDIR)/mxNodeDegDbl.o:  $(FCONNDIR)/src/nodedeg.h $(FCONNDIR)/src/fcmat.h
+$(OBJDIR)/mxNodeDegDbl.o:  mxNodeDeg.c makefile
+	$(realpath $(MATLABROOT))/mex -largeArrayDims \
+    CFLAGS='$(CFLAGS)' COPTIMFLAGS='$(COPTIMFLAGS)' \
+    -DNDEBUG -DREAL=double \
+    -I$(FCONNDIR)/src -I$(STATSDIR)/src \
+    -c mxNodeDeg.c -outdir $(OBJDIR); \
+  mv $(OBJDIR)/mxNodeDeg.o $(OBJDIR)/mxNodeDegDbl.o
 
-$(edgestats_flt) $(edgestats_dbl): \
-  CFILES = $(FCONNDIR)/edgestats.c $(FCONNDIR)/fcmat.c $(FCONNDIR)/matrix.c \
-    $(CORRDIR)/pcc.c $(CORRDIR)/tetracc.c $(CORRDIR)/binarize.c \
-    $(CPUINFODIR)/cpuinfo.c $(STATSDIR)/stats.c $(DOTDIR)/dot.c \
-    $(DOTDIR)/dot_avx.c $(DOTDIR)/dot_sse2.c $(DOTDIR)/dot_naive.c
-  PREREQ = $(FCONNDIR)/edgestats.* $(FCONNDIR)/fcmat.*  $(FCONNDIR)/matrix.* \
-    $(CORRDIR)/pcc.* $(CORRDIR)/tetracc.* $(CORRDIR)/binarize.* \
-    $(CPUINFODIR)/cpuinfo.* $(STATSDIR)/stats.* $(DOTDIR)/dot.* \
-    $(DOTDIR)/dot_avx.* $(DOTDIR)/dot_sse2.*  $(DOTDIR)/dot_naive.*
+#-----------------------------------------------------------------------------
+# dot objects
+#-----------------------------------------------------------------------------
+$(DOTDIR)/$(_OBJDIR)/dot_naive.o:
+	cd $(DOTDIR)/src; $(MAKE) -f makefile-mex dot_naive.o
 
-$(edgestats_flt) $(edgestats_dbl): $(PREREQ)
-$(edgestats_flt) $(edgestats_dbl): mxFcm.c makefile
-	$(MEXCC) $(DREAL) $(INCS) $(LIBS) $< $(CFILES) -outdir $(OUTDIR) -output $@
+$(DOTDIR)/$(_OBJDIR)/dot_sse2.o:
+	cd $(DOTDIR)/src; $(MAKE) -f makefile-mex dot_sse2.o
+
+$(DOTDIR)/$(_OBJDIR)/dot_avx.o:
+	cd $(DOTDIR)/src; $(MAKE) -f makefile-mex dot_avx.o
+
+$(DOTDIR)/$(_OBJDIR)/dot_avxfma.o:
+	cd $(DOTDIR)/src; $(MAKE) -f makefile-mex dot_avxfma.o
+
+$(DOTDIR)/$(_OBJDIR)/dot.o:
+	cd $(DOTDIR)/src; $(MAKE) -f makefile-mex dot.o
+
+#-----------------------------------------------------------------------------
+# stats objects
+#-----------------------------------------------------------------------------
+$(STATSDIR)/$(_OBJDIR)/stats_flt.o:
+	cd $(STATSDIR)/src; $(MAKE) -f makefile-mex stats_flt.o
+
+$(STATSDIR)/$(_OBJDIR)/stats_dbl.o:
+	cd $(STATSDIR)/src; $(MAKE) -f makefile-mex stats_dbl.o
+
+#-----------------------------------------------------------------------------
+# cpuinfo objects
+#-----------------------------------------------------------------------------
+$(CPUINFODIR)/$(_OBJDIR)/cpuinfo.o:
+	cd $(CPUINFODIR)/src; $(MAKE) -f makefile-mex cpuinfo.o
+
+#-----------------------------------------------------------------------------
+# corr objects
+#-----------------------------------------------------------------------------
+$(CORRDIR)/$(_OBJDIR)/pcc_flt.o:
+	cd $(CORRDIR)/src; $(MAKE) -f makefile-mex pcc_flt.o
+
+$(CORRDIR)/$(_OBJDIR)/tetracc_flt.o:
+	cd $(CORRDIR)/src; $(MAKE) -f makefile-mex tetracc_flt.o
+
+$(CORRDIR)/$(_OBJDIR)/binarize_flt.o:
+	cd $(CORRDIR)/src; $(MAKE) -f makefile-mex binarize_flt.o
+
+$(CORRDIR)/$(_OBJDIR)/pcc_dbl.o:
+	cd $(CORRDIR)/src; $(MAKE) -f makefile-mex pcc_dbl.o
+
+$(CORRDIR)/$(_OBJDIR)/tetracc_dbl.o:
+	cd $(CORRDIR)/src; $(MAKE) -f makefile-mex tetracc_dbl.o
+
+$(CORRDIR)/$(_OBJDIR)/binarize_dbl.o:
+	cd $(CORRDIR)/src; $(MAKE) -f makefile-mex binarize_dbl.o
+
+#-----------------------------------------------------------------------------
+# fconn objects
+#-----------------------------------------------------------------------------
+$(FCONNDIR)/$(_OBJDIR)/fcmat_flt.o:
+	cd $(FCONNDIR)/src; $(MAKE) -f makefile-mex fcmat_flt.o
+
+$(FCONNDIR)/$(_OBJDIR)/matrix_flt.o:
+	cd $(FCONNDIR)/src; $(MAKE) -f makefile-mex matrix_flt.o
+
+$(FCONNDIR)/$(_OBJDIR)/edgestats_flt.o:
+	cd $(FCONNDIR)/src; $(MAKE) -f makefile-mex edgestats_flt.o
+
+$(FCONNDIR)/$(_OBJDIR)/nodedeg_flt.o:
+	cd $(FCONNDIR)/src; $(MAKE) -f makefile-mex nodedeg_flt.o
+
+$(FCONNDIR)/$(_OBJDIR)/fcmat_dbl.o:
+	cd $(FCONNDIR)/src; $(MAKE) -f makefile-mex fcmat_dbl.o
+
+$(FCONNDIR)/$(_OBJDIR)/matrix_dbl.o:
+	cd $(FCONNDIR)/src; $(MAKE) -f makefile-mex matrix_dbl.o
+
+$(FCONNDIR)/$(_OBJDIR)/edgestats_dbl.o:
+	cd $(FCONNDIR)/src; $(MAKE) -f makefile-mex edgestats_dbl.o
+
+$(FCONNDIR)/$(_OBJDIR)/nodedeg_dbl.o:
+	cd $(FCONNDIR)/src; $(MAKE) -f makefile-mex nodedeg_dbl.o
