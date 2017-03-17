@@ -1,5 +1,5 @@
 function k = fcmNodeMetrics(nm,data,thr,varargin)
-%FCMNODE Nodal metrics of functional connectomes
+%FCMNODE Nodal metrics of functional connectomes.
 %
 %   K = FCMNODEMETRICS(NM,FD,THR) computes the nodal metric specified by NM
 %   for the nodes in the functional connectivity graph G implicitly

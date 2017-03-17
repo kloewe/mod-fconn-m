@@ -1,5 +1,5 @@
 function a = mfcmStats(fun,data,varargin)
-%MFCMSTATS Element-wise statistics across multiple functional connectomes
+%MFCMSTATS Element-wise statistics across multiple functional connectomes.
 %
 %   A = MFCMSTATS(FUN,F,...) computes a N-by-N matrix of connection-level
 %   statistics across multiple functional connectomes and returns its upper
