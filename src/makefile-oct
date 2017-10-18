@@ -64,6 +64,7 @@ $(OUTDIR)/mxFcmFlt.$(SUF):     $(FCONNDIR)/$(_OBJDIR)/edgestats_flt.o \
                                $(DOTDIR)/$(_OBJDIR)/dot_sse2.o \
                                $(DOTDIR)/$(_OBJDIR)/dot_avx.o \
                                $(DOTDIR)/$(_OBJDIR)/dot_avxfma.o \
+                               $(DOTDIR)/$(_OBJDIR)/dot_avx512.o \
                                $(CPUINFODIR)/$(_OBJDIR)/cpuinfo.o \
                                $(OBJDIR)/mxFcmFlt.o makefile-oct
 	$(MEXLD)                     $(FCONNDIR)/$(_OBJDIR)/edgestats_flt.o \
@@ -78,6 +79,7 @@ $(OUTDIR)/mxFcmFlt.$(SUF):     $(FCONNDIR)/$(_OBJDIR)/edgestats_flt.o \
                                $(DOTDIR)/$(_OBJDIR)/dot_sse2.o \
                                $(DOTDIR)/$(_OBJDIR)/dot_avx.o \
                                $(DOTDIR)/$(_OBJDIR)/dot_avxfma.o \
+                               $(DOTDIR)/$(_OBJDIR)/dot_avx512.o \
                                $(CPUINFODIR)/$(_OBJDIR)/cpuinfo.o \
                                $(OBJDIR)/mxFcmFlt.o -o $@
 
@@ -110,6 +112,7 @@ $(OUTDIR)/mxFcmDbl.$(SUF):     $(FCONNDIR)/$(_OBJDIR)/edgestats_dbl.o \
                                $(DOTDIR)/$(_OBJDIR)/dot_sse2.o \
                                $(DOTDIR)/$(_OBJDIR)/dot_avx.o \
                                $(DOTDIR)/$(_OBJDIR)/dot_avxfma.o \
+                               $(DOTDIR)/$(_OBJDIR)/dot_avx512.o \
                                $(CPUINFODIR)/$(_OBJDIR)/cpuinfo.o \
                                $(OBJDIR)/mxFcmDbl.o makefile-oct
 	$(MEXLD)                     $(FCONNDIR)/$(_OBJDIR)/edgestats_dbl.o \
@@ -124,6 +127,7 @@ $(OUTDIR)/mxFcmDbl.$(SUF):     $(FCONNDIR)/$(_OBJDIR)/edgestats_dbl.o \
                                $(DOTDIR)/$(_OBJDIR)/dot_sse2.o \
                                $(DOTDIR)/$(_OBJDIR)/dot_avx.o \
                                $(DOTDIR)/$(_OBJDIR)/dot_avxfma.o \
+                               $(DOTDIR)/$(_OBJDIR)/dot_avx512.o \
                                $(CPUINFODIR)/$(_OBJDIR)/cpuinfo.o \
                                $(OBJDIR)/mxFcmDbl.o -o $@
 
@@ -175,6 +179,9 @@ $(DOTDIR)/$(_OBJDIR)/dot_avx.o:
 
 $(DOTDIR)/$(_OBJDIR)/dot_avxfma.o:
 	cd $(DOTDIR)/src; $(MAKE) -f makefile-oct dot_avxfma.o
+
+$(DOTDIR)/$(_OBJDIR)/dot_avx512.o:
+	cd $(DOTDIR)/src; $(MAKE) -f makefile-oct dot_avx512.o
 
 $(DOTDIR)/$(_OBJDIR)/dot.o:
 	cd $(DOTDIR)/src; $(MAKE) -f makefile-oct dot.o
