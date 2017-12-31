@@ -45,7 +45,7 @@ function a = mfcmStats(fun,data,varargin)
 %               sets.
 %
 %     'corr'    Linear correlation between FC and an additional variable.
-%               A = MFCMEDGESTATS('corr',F,V) returns the upper triangular
+%               A = MFCMSTATS('corr',F,V) returns the upper triangular
 %               elements of the matrix of correlations between the FC
 %               values and the variable V. For each element, the functional
 %               connectivity values that are correlated with V come from
