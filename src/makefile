@@ -22,16 +22,15 @@ COPTIMFLAGS = -O2
 MATLABROOT  = $(dir $(realpath $(shell which matlab)))
 MEXCC       = $(realpath $(MATLABROOT))/mex -largeArrayDims
 MEXLD       = $(realpath $(MATLABROOT))/mex -largeArrayDims $(MEXOPTSLD)
-
 SUF         = mexa64
+
 _OBJDIR     = obj/$(shell uname -m)/matlab
 OBJDIR      = ../$(_OBJDIR)
-_DUMMY      := $(shell mkdir -p $(OBJDIR); mkdir -p $(OBJDIR))
 OUTDIR      = ../private
-_DUMMY      := $(shell mkdir -p $(OUTDIR); mkdir -p $(OUTDIR))
+_DUMMY      := $(shell mkdir -p $(OBJDIR); mkdir -p $(OUTDIR))
 
 #-----------------------------------------------------------------------------
-# Link MEX-files
+# Link MEX files
 #-----------------------------------------------------------------------------
 all: nodedeg_flt nodedeg_dbl edgestats_flt edgestats_dbl
 
@@ -41,6 +40,8 @@ $(OUTDIR)/mxNodeDegFlt.$(SUF): $(FCONNDIR)/$(_OBJDIR)/nodedeg_flt.o \
                                $(CORRDIR)/$(_OBJDIR)/pcc_flt.o \
                                $(CORRDIR)/$(_OBJDIR)/tetracc_flt.o \
                                $(CORRDIR)/$(_OBJDIR)/binarize_flt.o \
+                               $(STATSDIR)/$(_OBJDIR)/stats_all.o \
+                               $(DOTDIR)/$(_OBJDIR)/dot_all.o \
                                $(CPUINFODIR)/$(_OBJDIR)/cpuinfo.o \
                                $(OBJDIR)/mxNodeDegFlt.o makefile
 	$(MEXLD)                     $(FCONNDIR)/$(_OBJDIR)/nodedeg_flt.o \
@@ -48,6 +49,8 @@ $(OUTDIR)/mxNodeDegFlt.$(SUF): $(FCONNDIR)/$(_OBJDIR)/nodedeg_flt.o \
                                $(CORRDIR)/$(_OBJDIR)/pcc_flt.o \
                                $(CORRDIR)/$(_OBJDIR)/tetracc_flt.o \
                                $(CORRDIR)/$(_OBJDIR)/binarize_flt.o \
+                               $(STATSDIR)/$(_OBJDIR)/stats_all.o \
+                               $(DOTDIR)/$(_OBJDIR)/dot_all.o \
                                $(CPUINFODIR)/$(_OBJDIR)/cpuinfo.o \
                                $(OBJDIR)/mxNodeDegFlt.o -output $@
 
@@ -58,7 +61,7 @@ $(OUTDIR)/mxFcmFlt.$(SUF):     $(FCONNDIR)/$(_OBJDIR)/edgestats_flt.o \
                                $(CORRDIR)/$(_OBJDIR)/pcc_flt.o \
                                $(CORRDIR)/$(_OBJDIR)/tetracc_flt.o \
                                $(CORRDIR)/$(_OBJDIR)/binarize_flt.o \
-                               $(STATSDIR)/$(_OBJDIR)/stats_flt.o \
+                               $(STATSDIR)/$(_OBJDIR)/stats_all.o \
                                $(DOTDIR)/$(_OBJDIR)/dot_all.o \
                                $(CPUINFODIR)/$(_OBJDIR)/cpuinfo.o \
                                $(OBJDIR)/mxFcmFlt.o makefile
@@ -68,7 +71,7 @@ $(OUTDIR)/mxFcmFlt.$(SUF):     $(FCONNDIR)/$(_OBJDIR)/edgestats_flt.o \
                                $(CORRDIR)/$(_OBJDIR)/pcc_flt.o \
                                $(CORRDIR)/$(_OBJDIR)/tetracc_flt.o \
                                $(CORRDIR)/$(_OBJDIR)/binarize_flt.o \
-                               $(STATSDIR)/$(_OBJDIR)/stats_flt.o \
+                               $(STATSDIR)/$(_OBJDIR)/stats_all.o \
                                $(DOTDIR)/$(_OBJDIR)/dot_all.o \
                                $(CPUINFODIR)/$(_OBJDIR)/cpuinfo.o \
                                $(OBJDIR)/mxFcmFlt.o -output $@
@@ -79,6 +82,8 @@ $(OUTDIR)/mxNodeDegDbl.$(SUF): $(FCONNDIR)/$(_OBJDIR)/nodedeg_dbl.o \
                                $(CORRDIR)/$(_OBJDIR)/pcc_dbl.o \
                                $(CORRDIR)/$(_OBJDIR)/tetracc_dbl.o \
                                $(CORRDIR)/$(_OBJDIR)/binarize_dbl.o \
+                               $(STATSDIR)/$(_OBJDIR)/stats_all.o \
+                               $(DOTDIR)/$(_OBJDIR)/dot_all.o \
                                $(CPUINFODIR)/$(_OBJDIR)/cpuinfo.o \
                                $(OBJDIR)/mxNodeDegDbl.o makefile
 	$(MEXLD)                     $(FCONNDIR)/$(_OBJDIR)/nodedeg_dbl.o \
@@ -86,6 +91,8 @@ $(OUTDIR)/mxNodeDegDbl.$(SUF): $(FCONNDIR)/$(_OBJDIR)/nodedeg_dbl.o \
                                $(CORRDIR)/$(_OBJDIR)/pcc_dbl.o \
                                $(CORRDIR)/$(_OBJDIR)/tetracc_dbl.o \
                                $(CORRDIR)/$(_OBJDIR)/binarize_dbl.o \
+                               $(STATSDIR)/$(_OBJDIR)/stats_all.o \
+                               $(DOTDIR)/$(_OBJDIR)/dot_all.o \
                                $(CPUINFODIR)/$(_OBJDIR)/cpuinfo.o \
                                $(OBJDIR)/mxNodeDegDbl.o -output $@
 
@@ -96,7 +103,7 @@ $(OUTDIR)/mxFcmDbl.$(SUF):     $(FCONNDIR)/$(_OBJDIR)/edgestats_dbl.o \
                                $(CORRDIR)/$(_OBJDIR)/pcc_dbl.o \
                                $(CORRDIR)/$(_OBJDIR)/tetracc_dbl.o \
                                $(CORRDIR)/$(_OBJDIR)/binarize_dbl.o \
-                               $(STATSDIR)/$(_OBJDIR)/stats_dbl.o \
+                               $(STATSDIR)/$(_OBJDIR)/stats_all.o \
                                $(DOTDIR)/$(_OBJDIR)/dot_all.o \
                                $(CPUINFODIR)/$(_OBJDIR)/cpuinfo.o \
                                $(OBJDIR)/mxFcmDbl.o makefile
@@ -106,7 +113,7 @@ $(OUTDIR)/mxFcmDbl.$(SUF):     $(FCONNDIR)/$(_OBJDIR)/edgestats_dbl.o \
                                $(CORRDIR)/$(_OBJDIR)/pcc_dbl.o \
                                $(CORRDIR)/$(_OBJDIR)/tetracc_dbl.o \
                                $(CORRDIR)/$(_OBJDIR)/binarize_dbl.o \
-                               $(STATSDIR)/$(_OBJDIR)/stats_dbl.o \
+                               $(STATSDIR)/$(_OBJDIR)/stats_all.o \
                                $(DOTDIR)/$(_OBJDIR)/dot_all.o \
                                $(CPUINFODIR)/$(_OBJDIR)/cpuinfo.o \
                                $(OBJDIR)/mxFcmDbl.o -output $@
@@ -158,25 +165,22 @@ $(OBJDIR)/mxNodeDegDbl.o:  mxNodeDeg.c makefile
   mv $(OBJDIR)/mxNodeDeg.o $(OBJDIR)/mxNodeDegDbl.o
 
 #-----------------------------------------------------------------------------
-# dot objects
-#-----------------------------------------------------------------------------
-$(DOTDIR)/$(_OBJDIR)/dot_all.o:
-	$(MAKE) -C $(DOTDIR)/src -f makefile-mex
-
-#-----------------------------------------------------------------------------
-# stats objects
-#-----------------------------------------------------------------------------
-$(STATSDIR)/$(_OBJDIR)/stats_flt.o:
-	$(MAKE) -C $(STATSDIR)/src -f makefile-mex stats_flt.o
-
-$(STATSDIR)/$(_OBJDIR)/stats_dbl.o:
-	$(MAKE) -C $(STATSDIR)/src -f makefile-mex stats_dbl.o
-
-#-----------------------------------------------------------------------------
 # cpuinfo objects
 #-----------------------------------------------------------------------------
 $(CPUINFODIR)/$(_OBJDIR)/cpuinfo.o:
 	$(MAKE) -C $(CPUINFODIR)/src -f makefile-mex cpuinfo.o
+
+#-----------------------------------------------------------------------------
+# dot objects
+#-----------------------------------------------------------------------------
+$(DOTDIR)/$(_OBJDIR)/dot_all.o:
+	$(MAKE) -C $(DOTDIR)/src -f makefile-mex dot_all.o
+
+#-----------------------------------------------------------------------------
+# stats objects
+#-----------------------------------------------------------------------------
+$(STATSDIR)/$(_OBJDIR)/stats_all.o:
+	$(MAKE) -C $(STATSDIR)/src -f makefile-mex stats_all.o
 
 #-----------------------------------------------------------------------------
 # corr objects
