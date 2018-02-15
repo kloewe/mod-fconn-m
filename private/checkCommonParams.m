@@ -3,7 +3,10 @@ function opts = checkCommonParams(n,varargin)
 %
 %   Author: Kristian Loewe
 
-assert(mod(numel(varargin),2) == 0, 'Unexpected number of input arguments.');
+if ~isempty(varargin)
+  assert(mod(numel(varargin),2) == 0, ...
+    'Unexpected number of input arguments.');
+end
 
 % defaults
 opts.MaxThreads = int32(-1);  % auto
@@ -43,11 +46,8 @@ for i = 1:2:numel(varargin)
         otherwise
           error('Unknown functional connectivity measure specified.');
       end
-%     case 'Paired'
-%       assert(isscalar(pv) && ~issparse(pv) ...
-%         && (islogical(v) || v == 0 || v == 1));
     otherwise
-      error('Unexpected parameter name %s.',pn);
+      error('Unexpected parameter name %s.', pn);
   end
   opts.(pn) = pv;
 end
