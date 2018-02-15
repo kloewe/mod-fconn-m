@@ -1,7 +1,7 @@
-function k = fcmNodeMetrics(nm,data,thr,varargin)
-%FCMNODE Nodal metrics of functional connectomes.
+function k = fcNodeMetrics(nm,data,thr,varargin)
+%FCNODEMETRICS Nodal metrics of functional connectomes.
 %
-%   K = FCMNODEMETRICS(NM,FD,THR) computes the nodal metric specified by NM
+%   K = FCNODEMETRICS(NM,FD,THR) computes the nodal metric specified by NM
 %   for the nodes in the functional connectivity graph G implicitly
 %   constructed based on the input functional data FD and the binarization
 %   threshold THR. FD is a T-by-N array of functional data, where T is the
@@ -14,7 +14,7 @@ function k = fcmNodeMetrics(nm,data,thr,varargin)
 %     ------    -----------
 %     'degree'  node degree aka degree centrality
 %
-%   A = FCMNODEMETRICS(NM,FD,THR,'PARAM1',VAL1,'PARAM2',VAL2,...) can be
+%   A = FCNODEMETRICS(NM,FD,THR,'PARAM1',VAL1,'PARAM2',VAL2,...) can be
 %   used to specify the following additional parameters and their values:
 %
 %     Parameter     Value
@@ -73,7 +73,7 @@ switch nm
   case 'degree'
     %
   otherwise
-    error('Unexpected function name.');
+    error('Unexpected nodal metric ''%s''.');
 end
 
 % optional parameter-value pairs
