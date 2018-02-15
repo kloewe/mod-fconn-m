@@ -2,39 +2,66 @@
 # File    : makefile
 # Contents: build MEX-files
 # Author  : Kristian Loewe
+#
+# Usage   : make
+#           MEX_FLAGS='-v' make
+#           make | grep -v 'Warning.*gcc version'
+#           make -B | grep -v 'Warning.*gcc version'
+#           DEBUG=1 make -B | grep -v 'Warning.*gcc version'
 #-----------------------------------------------------------------------------
-.SUFFIXES:                                   # remove built-in rules
+.SUFFIXES:
 MAKEFLAGS   += -r
 
-SHELL       = /bin/bash
-DOTDIR      = ../../dot
-CORRDIR     = ../../corr
-CPUINFODIR  = ../../cpuinfo
-FCONNDIR    = ../../fconn
-STATSDIR    = ../../stats
+CC          ?= gcc
+CFBASE       = -std=c99 -Wall -Wextra -Wno-unused-parameter -Wconversion \
+               -Wshadow -pedantic
+DEFS        ?=
+MEX_FLAGS   ?=
 
-CC          = gcc
-CFLAGS      = -std=c99 \
-              -Wall -Wextra -Wno-unused-parameter -Wconversion -Wshadow \
-              -pedantic -fPIC
-COPTIMFLAGS = -O2
+DEBUG       ?= 0
+ifeq ($(DEBUG), 1)
+  CFBASE    += -g
+  CFOPT     ?= -O0
+else
+  CFOPT     ?= -O2
+  DEFS      += -DNDEBUG
+endif
+CFLAGS       = $(CFBASE) -fPIC $(DEFS)
 
-MATLABROOT  = $(dir $(realpath $(shell which matlab)))
-MEXCC       = $(realpath $(MATLABROOT))/mex -largeArrayDims
-MEXLD       = $(realpath $(MATLABROOT))/mex -largeArrayDims $(MEXOPTSLD)
-SUF         = mexa64
+MATLABROOT   = $(dir $(realpath $(shell which matlab)))
+MEXCC        = $(realpath $(MATLABROOT))/mex -largeArrayDims $(MEX_FLAGS) \
+               CFLAGS='$(CFLAGS)'
+MEXLD        = $(realpath $(MATLABROOT))/mex -largeArrayDims $(MEX_FLAGS)
+SUF          = mexa64
 
-_OBJDIR     = obj/$(shell uname -m)/matlab
-OBJDIR      = ../$(_OBJDIR)
-OUTDIR      = ../private
+_OBJDIR      = obj/$(shell uname -m)/matlab
+OBJDIR       = ../$(_OBJDIR)
+OUTDIR       = ../private
 _DUMMY      := $(shell mkdir -p $(OBJDIR); mkdir -p $(OUTDIR))
 
 #-----------------------------------------------------------------------------
+
+eq = $(if $(or $(1),$(2)),$(and $(findstring $(1),$(2)),\
+                                $(findstring $(2),$(1))),1)
+
+#-----------------------------------------------------------------------------
+
+CORRDIR      = ../../corr
+CPUINFODIR   = ../../cpuinfo
+DOTDIR       = ../../dot
+FCONNDIR     = ../../fconn
+STATSDIR     = ../../stats
+
+INCS         = -I$(FCONNDIR)/src -I$(STATSDIR)/src
+
+MEX_FILES    = mxNodeDegFlt mxFcmFlt \
+               mxNodeDegDbl mxFcmDbl
+#-----------------------------------------------------------------------------
 # Link MEX files
 #-----------------------------------------------------------------------------
-all: nodedeg_flt nodedeg_dbl edgestats_flt edgestats_dbl
+all: $(MEX_FILES)
 
-nodedeg_flt:                   $(OUTDIR)/mxNodeDegFlt.$(SUF)
+mxNodeDegFlt:                  $(OUTDIR)/mxNodeDegFlt.$(SUF)
 $(OUTDIR)/mxNodeDegFlt.$(SUF): $(FCONNDIR)/$(_OBJDIR)/nodedeg_flt.o \
                                $(FCONNDIR)/$(_OBJDIR)/fcmat_flt.o \
                                $(CORRDIR)/$(_OBJDIR)/pcc_flt.o \
@@ -54,7 +81,7 @@ $(OUTDIR)/mxNodeDegFlt.$(SUF): $(FCONNDIR)/$(_OBJDIR)/nodedeg_flt.o \
                                $(CPUINFODIR)/$(_OBJDIR)/cpuinfo.o \
                                $(OBJDIR)/mxNodeDegFlt.o -output $@
 
-edgestats_flt:                 $(OUTDIR)/mxFcmFlt.$(SUF)
+mxFcmFlt:                      $(OUTDIR)/mxFcmFlt.$(SUF)
 $(OUTDIR)/mxFcmFlt.$(SUF):     $(FCONNDIR)/$(_OBJDIR)/edgestats_flt.o \
                                $(FCONNDIR)/$(_OBJDIR)/fcmat_flt.o \
                                $(FCONNDIR)/$(_OBJDIR)/matrix_flt.o \
@@ -76,7 +103,7 @@ $(OUTDIR)/mxFcmFlt.$(SUF):     $(FCONNDIR)/$(_OBJDIR)/edgestats_flt.o \
                                $(CPUINFODIR)/$(_OBJDIR)/cpuinfo.o \
                                $(OBJDIR)/mxFcmFlt.o -output $@
 
-nodedeg_dbl:                   $(OUTDIR)/mxNodeDegDbl.$(SUF)
+mxNodeDegDbl:                  $(OUTDIR)/mxNodeDegDbl.$(SUF)
 $(OUTDIR)/mxNodeDegDbl.$(SUF): $(FCONNDIR)/$(_OBJDIR)/nodedeg_dbl.o \
                                $(FCONNDIR)/$(_OBJDIR)/fcmat_dbl.o \
                                $(CORRDIR)/$(_OBJDIR)/pcc_dbl.o \
@@ -96,7 +123,7 @@ $(OUTDIR)/mxNodeDegDbl.$(SUF): $(FCONNDIR)/$(_OBJDIR)/nodedeg_dbl.o \
                                $(CPUINFODIR)/$(_OBJDIR)/cpuinfo.o \
                                $(OBJDIR)/mxNodeDegDbl.o -output $@
 
-edgestats_dbl:                 $(OUTDIR)/mxFcmDbl.$(SUF)
+mxFcmDbl:                      $(OUTDIR)/mxFcmDbl.$(SUF)
 $(OUTDIR)/mxFcmDbl.$(SUF):     $(FCONNDIR)/$(_OBJDIR)/edgestats_dbl.o \
                                $(FCONNDIR)/$(_OBJDIR)/fcmat_dbl.o \
                                $(FCONNDIR)/$(_OBJDIR)/matrix_dbl.o \
@@ -126,20 +153,14 @@ $(OBJDIR)/mxFcmFlt.o:      $(FCONNDIR)/src/edgestats.h \
                            $(FCONNDIR)/src/fcmat.h $(FCONNDIR)/src/matrix.h \
                            $(STATSDIR)/src/stats.h
 $(OBJDIR)/mxFcmFlt.o:      mxFcm.c makefile
-	$(realpath $(MATLABROOT))/mex -largeArrayDims \
-    CFLAGS='$(CFLAGS)' COPTIMFLAGS='$(COPTIMFLAGS)' \
-    -DNDEBUG -DREAL=float \
-    -I$(FCONNDIR)/src -I$(STATSDIR)/src \
+	$(MEXCC) COPTIMFLAGS='$(CFOPT)' -DREAL=float $(INCS) -I$(DOTDIR)/src \
     -c mxFcm.c -outdir $(OBJDIR); \
   mv $(OBJDIR)/mxFcm.o $(OBJDIR)/mxFcmFlt.o
 
 mxNodeDegFlt.o:            $(OBJDIR)/mxNodeDegFlt.o
 $(OBJDIR)/mxNodeDegFlt.o:  $(FCONNDIR)/src/nodedeg.h $(FCONNDIR)/src/fcmat.h
 $(OBJDIR)/mxNodeDegFlt.o:  mxNodeDeg.c makefile
-	$(realpath $(MATLABROOT))/mex -largeArrayDims \
-    CFLAGS='$(CFLAGS)' COPTIMFLAGS='$(COPTIMFLAGS)' \
-    -DNDEBUG -DREAL=float \
-    -I$(FCONNDIR)/src -I$(STATSDIR)/src \
+	$(MEXCC) COPTIMFLAGS='$(CFOPT)' -DREAL=float $(INCS) \
     -c mxNodeDeg.c -outdir $(OBJDIR); \
   mv $(OBJDIR)/mxNodeDeg.o $(OBJDIR)/mxNodeDegFlt.o
 
@@ -147,28 +168,28 @@ mxFcmDbl.o:                $(OBJDIR)/mxFcmDbl.o
 $(OBJDIR)/mxFcmDbl.o:      $(FCONNDIR)/src/fcmat.h $(FCONNDIR)/src/matrix.h \
                            $(FCONNDIR)/src/edgestats.h $(STATSDIR)/src/stats.h
 $(OBJDIR)/mxFcmDbl.o:      mxFcm.c makefile
-	$(realpath $(MATLABROOT))/mex -largeArrayDims \
-    CFLAGS='$(CFLAGS)' COPTIMFLAGS='$(COPTIMFLAGS)' \
-    -DNDEBUG -DREAL=double \
-    -I$(FCONNDIR)/src -I$(STATSDIR)/src \
+	$(MEXCC) COPTIMFLAGS='$(CFOPT)' -DREAL=double $(INCS) -I$(DOTDIR)/src \
     -c mxFcm.c -outdir $(OBJDIR); \
   mv $(OBJDIR)/mxFcm.o $(OBJDIR)/mxFcmDbl.o
 
 mxNodeDegDbl.o:            $(OBJDIR)/mxNodeDegDbl.o
 $(OBJDIR)/mxNodeDegDbl.o:  $(FCONNDIR)/src/nodedeg.h $(FCONNDIR)/src/fcmat.h
 $(OBJDIR)/mxNodeDegDbl.o:  mxNodeDeg.c makefile
-	$(realpath $(MATLABROOT))/mex -largeArrayDims \
-    CFLAGS='$(CFLAGS)' COPTIMFLAGS='$(COPTIMFLAGS)' \
-    -DNDEBUG -DREAL=double \
-    -I$(FCONNDIR)/src -I$(STATSDIR)/src \
+	$(MEXCC) COPTIMFLAGS='$(CFOPT)' -DREAL=double $(INCS) \
     -c mxNodeDeg.c -outdir $(OBJDIR); \
   mv $(OBJDIR)/mxNodeDeg.o $(OBJDIR)/mxNodeDegDbl.o
 
 #-----------------------------------------------------------------------------
 # cpuinfo objects
 #-----------------------------------------------------------------------------
-$(CPUINFODIR)/$(_OBJDIR)/cpuinfo.o:
-	$(MAKE) -C $(CPUINFODIR)/src -f makefile-mex cpuinfo.o
+MKARGS_CPUINFO = -C $(CPUINFODIR)/src -f makefile-mex cpuinfo.o
+REMAKE_CPUINFO = $(shell $(MAKE) -q $(MKARGS_CPUINFO) > /dev/null 2>&1; \
+                 echo $$?\>0 | bc)
+ifneq ($(or $(call eq,$(REMAKE_CPUINFO),1),$(findstring B,$(MAKEFLAGS))),)
+$(CPUINFODIR)/$(_OBJDIR)/cpuinfo.o: FORCE
+	$(MAKE) $(MKARGS_CPUINFO)
+FORCE:
+endif
 
 #-----------------------------------------------------------------------------
 # dot objects
@@ -185,23 +206,59 @@ $(STATSDIR)/$(_OBJDIR)/stats_all.o:
 #-----------------------------------------------------------------------------
 # corr objects
 #-----------------------------------------------------------------------------
-$(CORRDIR)/$(_OBJDIR)/pcc_flt.o:
-	$(MAKE) -C $(CORRDIR)/src -f makefile-mex pcc_flt.o
+MKARGS_CORR1F = -C $(CORRDIR)/src -f makefile-mex pcc_flt.o
+REMAKE_CORR1F = $(shell $(MAKE) -q $(MKARGS_CORR1F) > /dev/null 2>&1; \
+               echo $$?\>0 | bc)
+ifneq ($(or $(call eq,$(REMAKE_CORR1F),1),$(findstring B,$(MAKEFLAGS))),)
+$(CORRDIR)/$(_OBJDIR)/pcc_flt.o: FORCE
+	$(MAKE) $(MKARGS_CORR1F)
+FORCE:
+endif
 
-$(CORRDIR)/$(_OBJDIR)/tetracc_flt.o:
-	$(MAKE) -C $(CORRDIR)/src -f makefile-mex tetracc_flt.o
+MKARGS_CORR2F = -C $(CORRDIR)/src -f makefile-mex tetracc_flt.o
+REMAKE_CORR2F = $(shell $(MAKE) -q $(MKARGS_CORR2F) > /dev/null 2>&1; \
+               echo $$?\>0 | bc)
+ifneq ($(or $(call eq,$(REMAKE_CORR2F),1),$(findstring B,$(MAKEFLAGS))),)
+$(CORRDIR)/$(_OBJDIR)/tetracc_flt.o: FORCE
+	$(MAKE) $(MKARGS_CORR2F)
+FORCE:
+endif
 
-$(CORRDIR)/$(_OBJDIR)/binarize_flt.o:
-	$(MAKE) -C $(CORRDIR)/src -f makefile-mex binarize_flt.o
+MKARGS_CORR3F = -C $(CORRDIR)/src -f makefile-mex binarize_flt.o
+REMAKE_CORR3F = $(shell $(MAKE) -q $(MKARGS_CORR3F) > /dev/null 2>&1; \
+               echo $$?\>0 | bc)
+ifneq ($(or $(call eq,$(REMAKE_CORR3F),1),$(findstring B,$(MAKEFLAGS))),)
+$(CORRDIR)/$(_OBJDIR)/binarize_flt.o: FORCE
+	$(MAKE) $(MKARGS_CORR3F)
+FORCE:
+endif
+#-----------------------------------------------------------------------------
+MKARGS_CORR1D = -C $(CORRDIR)/src -f makefile-mex pcc_dbl.o
+REMAKE_CORR1D = $(shell $(MAKE) -q $(MKARGS_CORR1D) > /dev/null 2>&1; \
+               echo $$?\>0 | bc)
+ifneq ($(or $(call eq,$(REMAKE_CORR1D),1),$(findstring B,$(MAKEFLAGS))),)
+$(CORRDIR)/$(_OBJDIR)/pcc_dbl.o: FORCE
+	$(MAKE) $(MKARGS_CORR1D)
+FORCE:
+endif
 
-$(CORRDIR)/$(_OBJDIR)/pcc_dbl.o:
-	$(MAKE) -C $(CORRDIR)/src -f makefile-mex pcc_dbl.o
+MKARGS_CORR2D = -C $(CORRDIR)/src -f makefile-mex tetracc_dbl.o
+REMAKE_CORR2D = $(shell $(MAKE) -q $(MKARGS_CORR2D) > /dev/null 2>&1; \
+               echo $$?\>0 | bc)
+ifneq ($(or $(call eq,$(REMAKE_CORR2D),1),$(findstring B,$(MAKEFLAGS))),)
+$(CORRDIR)/$(_OBJDIR)/tetracc_dbl.o: FORCE
+	$(MAKE) $(MKARGS_CORR2D)
+FORCE:
+endif
 
-$(CORRDIR)/$(_OBJDIR)/tetracc_dbl.o:
-	$(MAKE) -C $(CORRDIR)/src -f makefile-mex tetracc_dbl.o
-
-$(CORRDIR)/$(_OBJDIR)/binarize_dbl.o:
-	$(MAKE) -C $(CORRDIR)/src -f makefile-mex binarize_dbl.o
+MKARGS_CORR3D = -C $(CORRDIR)/src -f makefile-mex binarize_dbl.o
+REMAKE_CORR3D = $(shell $(MAKE) -q $(MKARGS_CORR3D) > /dev/null 2>&1; \
+               echo $$?\>0 | bc)
+ifneq ($(or $(call eq,$(REMAKE_CORR3D),1),$(findstring B,$(MAKEFLAGS))),)
+$(CORRDIR)/$(_OBJDIR)/binarize_dbl.o: FORCE
+	$(MAKE) $(MKARGS_CORR3D)
+FORCE:
+endif
 
 #-----------------------------------------------------------------------------
 # fconn objects
