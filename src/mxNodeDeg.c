@@ -23,7 +23,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
   REAL thr = *(REAL *)mxGetData(prhs[1]);        // FC threshold
   int P = *(int *)mxGetData(prhs[2]);            // # threads
   int C = *(int *)mxGetData(prhs[3]);            // cache/tile size
-  double maxmem = *(double *)mxGetData(prhs[4]);    // max. memory
+  double maxmem = *(double *)mxGetData(prhs[4]); // max. memory
   int M = *(int *)mxGetData(prhs[5]);            // FC measure
   DBGMSG("T: %d  N: %d  P: %d  C: %d  maxmem: %f  M: %d  thr: %f\n",
           T, N, P, C, maxmem, M, thr);
