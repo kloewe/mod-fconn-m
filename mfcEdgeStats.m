@@ -127,7 +127,7 @@ assert(~isempty(fun), 'Unexpected function name.');
   'didt', ...    //  9
   'corrv', ...   // 10
   });
-assert(tf && fno > 0, 'Unexpected function name.');
+assert(tf && fno > 0, 'Unexpected function name: ''%s''.', fun);
 fno = int32(fno);
 
 % input data
@@ -178,6 +178,8 @@ switch fun
       'F1 and F2 must have the same #observations per variable.');
     assert(size(data1,2) == size(data2,2), ...
       'F1 and F2 must have the same #variables per data set.');
+    assert(~strcmp(fun, 'pairedt') || n1 == n2, ...
+      'If FUN2 is ''pairedt'', S1 must be equal to S2.');
 
     args = {fno, cat(3,data1,data2), int32([n1 n2])};
 
