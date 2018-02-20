@@ -16,14 +16,14 @@ doTest = [1 1 1 1];
 dtypes = {'single', 'double'};
 fmt = {'%15.9f','%25.17f'};
 
-tVals = [100 300];
-nVals = [100 500];
+tVals = [100];% 300];
+nVals = [100];% 500];
 
-sVals  = [5 10 20 30];
-sVals1 = [5 10 20 30];
-sVals2 = [5 10 20 30];
+sVals  = [5];% 10 20 30];
+sVals1 = [5];% 10 20 30];
+sVals2 = [5];% 10 20 30];
 
-R = 2;
+R = 1; %2;
 
 mtVals = [1 corecnt() proccnt()];
 mmVals = [0 1 10]; % 100];
@@ -44,19 +44,19 @@ for iDT = 1:numel(dtypes)
     prefix = sprintf('mfcEdgeStats(''%s''', stats{iStat});
 
     fprintf('\n%s, ...)\n', prefix);
-    fprintf('----------------------\n');
+    fprintf('---------------------------\n');
 
-    for T = tVals           % n. of timepoints
-      for N = nVals         % n. of nodes
-        for S = sVals       % n. of data sets
+    for T = tVals              % n. of timepoints
+      for N = nVals            % n. of nodes
+        for S = sVals          % n. of data sets
 
           mad = (N*S)*5*eps(dtypes{iDT});
           mad = min(mad, 0.001);
 
-          t = zeros(1,8);   % timings
-          str = cell(1,8);  % descriptive strings
+          t = zeros(1,1+numel(mtVals)+numel(mmVals));
+          str = cell(size(t)); % timings and descriptive strings
 
-          for iR = 1:R      % repetitions
+          for iR = 1:R         % repetitions
 
             data = 10 + rand(T, N, S, dtypes{iDT});
 
@@ -156,12 +156,12 @@ for iDT = 1:numel(dtypes)
     prefix = sprintf('mfcEdgeStats(''%s''', stats{iStat});
 
     fprintf('\n%s, ...)\n', prefix);
-    fprintf('----------------------\n');
+    fprintf('---------------------------\n');
 
-    for T = tVals             % n. of timepoints
-      for N = nVals           % n. of nodes
-        for S1 = sVals1       % n. of data sets
-          for S2 = sVals2     % n. of data sets
+    for T = tVals                % n. of timepoints
+      for N = nVals              % n. of nodes
+        for S1 = sVals1          % n. of data sets (sample 1)
+          for S2 = sVals2        % n. of data sets (sample 2)
 
             if strcmp(stats{iStat}, 'pairedt') && S1 ~= S2
               continue;
@@ -170,10 +170,10 @@ for iDT = 1:numel(dtypes)
             mad = (N*S1*S2)*5*eps(dtypes{iDT});
             mad = min(mad, 0.001);
 
-            t = zeros(1,8);   % timings
-            str = cell(1,8);  % descriptive strings
+            t = zeros(1,1+numel(mtVals)+numel(mmVals));
+            str = cell(size(t)); % timings and descriptive strings
 
-            for iR = 1:R      % repetitions
+            for iR = 1:R         % repetitions
 
               data1 = 10 + rand(T, N, S1, dtypes{iDT});
               data2 = 10 + rand(T, N, S2, dtypes{iDT});
@@ -277,7 +277,7 @@ for iDT = 1:numel(dtypes)
     prefix = sprintf('mfcEdgeStats(''%s''', stats{iStat});
 
     fprintf('\n%s, ...)\n', prefix);
-    fprintf('----------------------\n');
+    fprintf('---------------------------\n');
 
     for T = tVals             % n. of timepoints
       for N = nVals           % n. of nodes
@@ -287,8 +287,8 @@ for iDT = 1:numel(dtypes)
             mad = (N*S1*S2)*5*eps(dtypes{iDT});
             mad = min(mad, 0.001);
 
-            t = zeros(1,8);   % timings
-            str = cell(1,8);  % descriptive strings
+            t = zeros(1,1);   % timings
+            str = cell(1,1);  % descriptive strings
 
             for iR = 1:R      % repetitions
 
@@ -328,26 +328,26 @@ for iDT = 1:numel(dtypes)
     prefix = sprintf('mfcEdgeStats(''%s''', stats{iStat});
 
     fprintf('\n%s, ...)\n', prefix);
-    fprintf('----------------------\n');
+    fprintf('---------------------------\n');
 
-    for T = tVals           % n. of timepoints
-      for N = tVals         % n. of nodes
-        for S = tVals       % n. of data sets
+    for T = tVals              % n. of timepoints
+      for N = tVals            % n. of nodes
+        for S = tVals          % n. of data sets
 
           mad = (N*S)*5*eps(dtypes{iDT});
           mad = min(mad, 0.001);
 
-          t = zeros(1,8);   % timings
-          str = cell(1,8);  % descriptive strings
+          t = zeros(1,1+numel(mtVals)+numel(mmVals));
+          str = cell(size(t)); % timings and descriptive strings
 
-          for iR = 1:R      % repetitions
+          for iR = 1:R         % repetitions
 
             data = 10 + rand(T, N, S, dtypes{iDT});
             v = rand(S, 1, dtypes{iDT});
 
             str{1} = sprintf('%s, data, v)', prefix);
             tic;
-            s = mfcEdgeStats(stats{iStat}, data, v);
+            [s,p] = mfcEdgeStats(stats{iStat}, data, v);
             t(1) = t(1) + toc;
 
             for iMT = 1:numel(mtVals)
@@ -379,13 +379,20 @@ for iDT = 1:numel(dtypes)
             assert(~any(isnan(r(:))));
 
             for iE = 1:N*(N-1)/2
-              sRef = refFuncs{iStat}(r(iE,:), v(:));
+              [sRef,pRef] = refFuncs{iStat}(r(iE,:), v(:));
               d = sRef - s(iE);
               if ~isequal(s(iE), sRef) && abs(d) > mad && abs(d)/sRef > mad
                 fprintf([str{1} '  N: %6d  R: %3d' ...
                   '  sRef: ' fmt{iDT} '  s: ' fmt{iDT} ...
                   '  d: %15.9f  \n'], ...
                   N, iR, sRef, s(iE), d);
+              end
+              d = pRef - p(iE);
+              if ~isequal(p(iE), pRef) && abs(d) > mad && abs(d)/pRef > mad
+                fprintf([str{1} '  N: %6d  R: %3d' ...
+                  '  pRef: ' fmt{iDT} '  p: ' fmt{iDT} ...
+                  '  d: %15.9f  \n'], ...
+                  N, iR, pRef, p(iE), d);
               end
             end
 

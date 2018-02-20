@@ -62,11 +62,17 @@ function varargout = mfcEdgeStats(fun,data,varargin)
 %                     (two dependent/paired  A = MFCEDGESTATS('pairedt',F1,F2)
 %                      samples)
 %
+%                     [A,P] = MFCEDGESTATS('pairedt',...) also returns the
+%                     corresponding p values in P.
+%
 %   A = MFCEDGESTATS('corrv',F,V) can be used to compute for each connection
 %   the Pearson correlation between the connectivity values from the
 %   individual connectomes and the specified variable V. F is an T-by-N-by-S
 %   array containing S functional data sets. V is a numeric vector of
 %   length S.
+%
+%   [A,P] = MFCEDGESTATS('corrv',F,V) also returns the corresponding p values
+%   in P.
 %
 %   A = MFCEDGESTATS('didt',FA1,FA2,FB1,FB2,...) computes a difference-in-
 %   differences (DiD) t statistic, where FA1 and FA2 (FB1 and FB2) are the
@@ -219,13 +225,23 @@ a = mxFcm(args{:});
 
 if nargout == 2
   if     strcmp(fun, 'tstat')
-    p = 2 * cast(1 - tcdf(double(abs(a)), n-1), class(data));
+    p = 2 * (1 - tcdf(double(abs(a)), n-1));
+
   elseif strcmp(fun, 'tstat2')
-    p = 2 * cast(1 - tcdf(double(abs(a)), n1+n2-2), class(data1));
+    p = 2 * (1 - tcdf(double(abs(a)), n1+n2-2));
+
   elseif strcmp(fun, 'pairedt')
-    p = 2 * cast(1 - tcdf(double(abs(a)), n1-1), class(data));
+    p = 2 * (1 - tcdf(double(abs(a)), n1-1));
+
+  elseif strcmp(fun, 'corrv')
+    r2t = @(r,n) r./sqrt((1-double(r).^2)./(n-2));
+    t2p = @(t,n) 2 * (1 - tcdf(double(abs(t)), n-2));
+    p = t2p(r2t(a, n), n);
+
+  else
+    error('Unexpected number of output arguments.');
   end
-  varargout = {a,p};
+  varargout = {a, cast(p, class(data))};
 
 else
   varargout = {a};

@@ -17,9 +17,9 @@ switch func
     s = stats.tstat;
     
   case 'corrv'
-    cc = corrcoef(varargin{:});
-    s = cc(2);
-    
+    [s,p] = corrcoef(varargin{:});
+    s = s(2);
+    p = p(2);
   otherwise
     error('Unexpected input function handle.');
 end
