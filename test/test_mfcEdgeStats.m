@@ -123,7 +123,7 @@ for iDT = 1:numel(dtypes)
 
           fprintf('T = %d; N = %d; S = %d\n', T, N, S);
           for i = 1:numel(str)
-            fprintf('%-45s    %f\n', str{i}, t(i)/R);
+            fprintf('%-55s    %f\n', str{i}, t(i)/R);
           end
         end
       end
@@ -162,6 +162,10 @@ for iDT = 1:numel(dtypes)
       for N = nVals           % n. of nodes
         for S1 = sVals1       % n. of data sets
           for S2 = sVals2     % n. of data sets
+
+            if strcmp(stats{iStat}, 'pairedt') && S1 ~= S2
+              continue;
+            end
 
             mad = (N*S1*S2)*5*eps(dtypes{iDT});
             mad = min(mad, 0.001);
@@ -315,6 +319,8 @@ fprintf('Test 4: corrv ...\n');
 
 stats = {'corrv'};
 
+refFuncs = {@(varargin) refwrap('corrv', varargin{:})};
+
 for iDT = 1:numel(dtypes)
   fprintf('\n--- %s ---\n', dtypes{iDT});
 
@@ -385,7 +391,7 @@ for iDT = 1:numel(dtypes)
 
             fprintf('T = %d; N = %d; S = %d\n', T, N, S);
             for i = 1:numel(str)
-              fprintf('%-45s    %f\n', str{i}, t(i)/R);
+              fprintf('%-55s    %f\n', str{i}, t(i)/R);
             end
           end
         end
