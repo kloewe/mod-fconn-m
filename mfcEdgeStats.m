@@ -71,12 +71,15 @@ function varargout = mfcEdgeStats(fun,data,varargin)
 %   array containing S functional data sets. V is a numeric vector of
 %   length S.
 %
-%   [A,P] = MFCEDGESTATS('corrv',F,V) also returns the corresponding p values
+%   [A,P] = MFCEDGESTATS('corrv',...) also returns the corresponding p values
 %   in P.
 %
-%   A = MFCEDGESTATS('didt',FA1,FA2,FB1,FB2,...) computes a difference-in-
+%   A = MFCEDGESTATS('didt',FA1,FA2,FB1,FB2) computes a difference-in-
 %   differences (DiD) t statistic, where FA1 and FA2 (FB1 and FB2) are the
 %   first and second measurements from group A (B).
+%
+%   [A,P] = MFCEDGESTATS('didt',...) also returns the corresponding p values
+%   in P.
 %
 %   By default, the functional connectomes are being derived from the
 %   functional data using the Pearson sample correlation coefficient. Note
@@ -189,6 +192,15 @@ switch fun
 
     args = {fno, cat(3,data1,data2), int32([n1 n2])};
 
+  case 'didt'
+    na1 = size(data,3);
+    na2 = size(varargin{1},3);
+    nb1 = size(varargin{2},3);
+    nb2 = size(varargin{3},3);
+    assert(na1 == na2 && nb1 == nb2);
+    optargin = varargin(4:end);
+    args = {fno, cat(3, data, varargin{1:3}), int32([na1 nb1])};
+
   case 'corrv'
     v = varargin{1};
     assert(isnumeric(v) && isreal(v) && isvector(v) && ~issparse(v), ...
@@ -202,15 +214,6 @@ switch fun
     assert(n == numel(varargin{1}), 'V must have S elements.');
 
     args = {fno, data, int32(n), varargin{1}};
-    
-  case 'didt'
-    na1 = size(data,3);
-    na2 = size(varargin{1},3);
-    nb1 = size(varargin{2},3);
-    nb2 = size(varargin{3},3);
-    assert(na1 == na2 && nb1 == nb2);
-    optargin = varargin(4:end);
-    args = {fno, cat(3, data, varargin{1:3}), int32([na1 nb1])}; 
 
   otherwise
     error('Unexpected function name: ''%s.''', fun);
@@ -223,20 +226,24 @@ args(end+1:end+4) = {...
 
 a = mxFcm(args{:});
 
+t2p = @(t,df) 2 * (1 - tcdf(double(abs(t)), df));
+
 if nargout == 2
   if     strcmp(fun, 'tstat')
-    p = 2 * (1 - tcdf(double(abs(a)), n-1));
+    p = t2p(a, n - 1);
 
   elseif strcmp(fun, 'tstat2')
-    p = 2 * (1 - tcdf(double(abs(a)), n1+n2-2));
+    p = t2p(a, n1 + n2 - 2);
 
   elseif strcmp(fun, 'pairedt')
-    p = 2 * (1 - tcdf(double(abs(a)), n1-1));
+    p = t2p(a, n1 - 1);
+
+  elseif strcmp(fun, 'didt')
+    p = t2p(a, na1 + nb1 - 2);
 
   elseif strcmp(fun, 'corrv')
     r2t = @(r,n) r./sqrt((1-double(r).^2)./(n-2));
-    t2p = @(t,n) 2 * (1 - tcdf(double(abs(t)), n-2));
-    p = t2p(r2t(a, n), n);
+    p = t2p(r2t(a, n), n-2);
 
   else
     error('Unexpected number of output arguments.');

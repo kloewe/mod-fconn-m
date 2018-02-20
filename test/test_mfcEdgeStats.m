@@ -16,14 +16,14 @@ doTest = [1 1 1 1];
 dtypes = {'single', 'double'};
 fmt = {'%15.9f','%25.17f'};
 
-tVals = [100];% 300];
-nVals = [100];% 500];
+tVals = [100 300];
+nVals = [100 500];
 
-sVals  = [5];% 10 20 30];
-sVals1 = [5];% 10 20 30];
-sVals2 = [5];% 10 20 30];
+sVals  = [5 10 20 30];
+sVals1 = [5 10 20 30];
+sVals2 = [5 10 20 30];
 
-R = 1; %2;
+R = 2;
 
 mtVals = [1 corecnt() proccnt()];
 mmVals = [0 1 10]; % 100];
@@ -67,6 +67,7 @@ for iDT = 1:numel(dtypes)
 
             if strcmp(stats{iStat}, 'tstat')
               [s,p] = mfcEdgeStats(stats{iStat}, data);
+              assert(all(p >= 0 & p <= 1));
             end
 
             for iMT = 1:numel(mtVals)
@@ -185,6 +186,7 @@ for iDT = 1:numel(dtypes)
 
               if ismember(stats{iStat}, {'tstat2','pairedt'})
                 [s,p] = mfcEdgeStats(stats{iStat}, data1, data2);
+                assert(all(p >= 0 & p <= 1));
               end
 
               for iMT = 1:numel(mtVals)
@@ -301,6 +303,9 @@ for iDT = 1:numel(dtypes)
               tic;
               s = mfcEdgeStats(stats{iStat}, dataA1, dataA2, dataB1, dataB2);
               t(1) = t(1) + toc;
+
+              [s,p] = mfcEdgeStats(stats{iStat}, dataA1, dataA2, dataB1, dataB2);
+              assert(all(p >= 0 & p <= 1));
             end
           end
         end
@@ -347,8 +352,11 @@ for iDT = 1:numel(dtypes)
 
             str{1} = sprintf('%s, data, v)', prefix);
             tic;
-            [s,p] = mfcEdgeStats(stats{iStat}, data, v);
+            s = mfcEdgeStats(stats{iStat}, data, v);
             t(1) = t(1) + toc;
+
+            [s,p] = mfcEdgeStats(stats{iStat}, data, v);
+            assert(all(p >= 0 & p <= 1));
 
             for iMT = 1:numel(mtVals)
               mt = mtVals(iMT);
